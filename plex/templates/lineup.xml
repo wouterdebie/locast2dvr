@@ -1,0 +1,9 @@
+<Lineup>
+{% for station in stations %}
+  <Program>
+    <GuideNumber>{{station['channel']}}</GuideNumber>
+    <GuideName>{{station['name']}}</GuideName>
+    <URL>http://{{url_base}}/watch/{{station['id']}}</URL>
+  </Program>
+{% endfor %}
+</Lineup>

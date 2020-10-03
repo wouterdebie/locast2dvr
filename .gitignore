@@ -1,0 +1,4 @@
+venv
+.vscode
+**/__pycache__
+locast4plex.egg-info/
