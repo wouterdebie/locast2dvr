@@ -70,6 +70,4 @@ def cli(*args, **config):
     ssdp = SSDPServer()
     ssdp.register('local', f'uuid:{c.uuid}::upnp:rootdevice',
                   'upnp:rootdevice', f'http://{c.bind_address}:{c.port}/device.xml')
-    threading.Thread(target=ssdp.run)
-
-    print("aap")
+    threading.Thread(target=ssdp.run).start()
