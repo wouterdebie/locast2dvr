@@ -51,7 +51,7 @@ def cli(*args, **config):
     elif c.override_zipcode:
         geos = [locast.Geo(c.zipcode)]
     elif c.regions_file:
-        geos = [locast.Geo(zipcode=z.rstrip())
+        geos = [locast.Geo(zipcode=z[:5])
                 for z in c.regions_file.readlines() if not z.startswith("#")]
     else:
         geos = [locast.Geo()]
