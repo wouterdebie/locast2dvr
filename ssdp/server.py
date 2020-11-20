@@ -86,7 +86,8 @@ class SSDPServer:
         headers = [x.split(':', 1) for x in lines]
         headers = dict([(x[0].lower(), x[1]) for x in headers])
 
-        logger.info('SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port))
+        logger.debug('SSDP command %s %s - from %s:%d' %
+                     (cmd[0], cmd[1], host, port))
         logger.debug('with headers: {}.'.format(headers))
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
@@ -121,14 +122,15 @@ class SSDPServer:
             self.do_notify(usn)
 
     def unregister(self, usn):
-        logger.info("Un-registering %s" % usn)
+        logger.debug("Un-registering %s" % usn)
         del self.known[usn]
 
     def is_known(self, usn):
         return usn in self.known
 
     def send_it(self, response, destination, delay, usn):
-        logger.debug('send discovery response delayed by %ds for %s to %r' % (delay, usn, destination))
+        logger.debug('send discovery response delayed by %ds for %s to %r' % (
+            delay, usn, destination))
         try:
             self.sock.sendto(response.encode(), destination)
         except (AttributeError, socket.error) as msg:
@@ -140,8 +142,9 @@ class SSDPServer:
 
         (host, port) = host_port
 
-        logger.info('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
-        logger.info('Discovery request for %s' % headers['st'])
+        logger.debug('Discovery request from (%s,%d) for %s' %
+                     (host, port, headers['st']))
+        logger.debug('Discovery request for %s' % headers['st'])
 
         # Do we know about this service?
         for i in list(self.known.values()):
@@ -160,19 +163,21 @@ class SSDPServer:
                         response.append('%s: %s' % (k, v))
 
                 if usn:
-                    response.append('DATE: %s' % formatdate(timeval=None, localtime=False, usegmt=True))
+                    response.append('DATE: %s' % formatdate(
+                        timeval=None, localtime=False, usegmt=True))
 
                     response.extend(('', ''))
                     delay = random.randint(0, int(headers['mx']))
 
-                    self.send_it('\r\n'.join(response), (host, port), delay, usn)
+                    self.send_it('\r\n'.join(response),
+                                 (host, port), delay, usn)
 
     def do_notify(self, usn):
         """Do notification"""
 
         if self.known[usn]['SILENT']:
             return
-        logger.info('Sending alive notification for %s' % usn)
+        logger.debug('Sending alive notification for %s' % usn)
 
         resp = [
             'NOTIFY * HTTP/1.1',
@@ -191,15 +196,17 @@ class SSDPServer:
         resp.extend(('', ''))
         logger.debug('do_notify content', resp)
         try:
-            self.sock.sendto('\r\n'.join(resp).encode(), (SSDP_ADDR, SSDP_PORT))
-            self.sock.sendto('\r\n'.join(resp).encode(), (SSDP_ADDR, SSDP_PORT))
+            self.sock.sendto('\r\n'.join(resp).encode(),
+                             (SSDP_ADDR, SSDP_PORT))
+            self.sock.sendto('\r\n'.join(resp).encode(),
+                             (SSDP_ADDR, SSDP_PORT))
         except (AttributeError, socket.error) as msg:
             logger.warning("failure sending out alive notification: %r" % msg)
 
     def do_byebye(self, usn):
         """Do byebye"""
 
-        logger.info('Sending byebye notification for %s' % usn)
+        logger.debug('Sending byebye notification for %s' % usn)
 
         resp = [
             'NOTIFY * HTTP/1.1',
@@ -221,6 +228,7 @@ class SSDPServer:
                 try:
                     self.sock.sendto('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
                 except (AttributeError, socket.error) as msg:
-                    logger.error("failure sending out byebye notification: %r" % msg)
+                    logger.error(
+                        "failure sending out byebye notification: %r" % msg)
         except KeyError as msg:
             logger.error("error building byebye notification: %r" % msg)

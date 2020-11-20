@@ -5,8 +5,8 @@
   </specVersion>
   <device>
     <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
-    <friendlyName>Locast4Plex</friendlyName>
-    <manufacturer>Silicondust</manufacturer>
+    <friendlyName>{{friendly_name}}</friendlyName>
+    <manufacturer>Locast4Plex</manufacturer>
     <modelName>{{device_model}}</modelName>
     <modelNumber>{{device_model}}</modelNumber>
     <serialNumber/>

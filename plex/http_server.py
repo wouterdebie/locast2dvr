@@ -1,15 +1,13 @@
-from flask import Flask, Response
-from flask import request
+import logging
 import subprocess
 
+from flask import Flask, Response, jsonify, request
 from flask.templating import render_template
-from flask import jsonify
-# import http.client as http_client
-# http_client.HTTPConnection.debuglevel = 1
 
 
-def PlexHTTPServer(c, locast_service):
-
+def PlexHTTPServer(c, uuid, locast_service):
+    logging.info(
+        f"Starting PlexHTTPServer on port {c.bind_address}:{c.port}, uuid: {uuid}")
     app = Flask(__name__)
 
     stations = locast_service.get_stations()
@@ -22,20 +20,21 @@ def PlexHTTPServer(c, locast_service):
     def device_xml():
         xml = render_template('device.xml',
                               device_model=c.device_model,
-                              uuid=c.uuid,
+                              friendly_name=locast_service.city,
+                              uuid=uuid,
                               url_base=url_base)
         return Response(xml, mimetype='text/xml')
 
     @app.route('/discover.json', methods=['GET'])
     def discover_json():
         data = {
-            "FriendlyName": "Locast4Plex",
-            "Manufacturer": "Silicondust",
+            "FriendlyName": locast_service.city,
+            "Manufacturer": "Locast4Plex",
             "ModelNumber": c.device_model,
             "FirmwareName": c.device_firmware,
             "TunerCount": c.tuner_count,
             "FirmwareVersion": c.device_firmware,
-            "DeviceID": c.uuid,
+            "DeviceID": uuid,
             "DeviceAuth": "locast4plex",
             "BaseURL": f"http://{url_base}",
             "LineupURL": f"http://{url_base}/lineup.json"
@@ -97,7 +96,6 @@ def PlexHTTPServer(c, locast_service):
                 try:
                     yield ffmpeg_proc.stdout.read(c.bytes_per_read)
                 except:
-                    print("SOMETHING HAPPENED!")
                     ffmpeg_proc.terminate()
                     ffmpeg_proc.communicate()
                     break

@@ -12,36 +12,56 @@ IP_URL = 'https://api.locastnet.org/api/watch/dma/ip'
 STATIONS_URL = 'https://api.locastnet.org/api/watch/epg'
 WATCH_URL = 'https://api.locastnet.org/api/watch/station'
 
+TOKEN_LIFETIME = 3600
+
+
+class Geo:
+    def __init__(self, zipcode=None, latlon=None):
+        self.zipcode = zipcode
+        self.latlon = latlon
+
 
 class Service:
-    def __init__(self, username, password, latlon=None, zipcode=None):
-        self.username = username
-        self.password = password
-        self.latlon = latlon
-        self.zipcode = zipcode
+    logged_in = False
 
-        self.logged_in = False
+    def __init__(self, geo=None):
+        self.latlon = geo.latlon
+        self.zipcode = geo.zipcode
+
         self.location = None
         self.active = False
         self.dma = None
         self.city = None
 
-    def login(self):
-        logging.info(f"Locast logging in with {self.username}")
+    @classmethod
+    def login(cls, username, password):
+        cls.username = username
+        cls.password = password
+        logging.info(f"Locast logging in with {cls.username}")
         try:
             r = requests.post(LOGIN_URL, json={
-                "username": self.username, "password": self.password},
+                "username": cls.username, "password": cls.password},
                 headers={'Content-Type': 'application/json'})
             r.raise_for_status()
         except requests.exceptions.HTTPError as err:
             logging.error(f'Login failed: {err}')
             return False
 
-        self.token = r.json()['token']
-        self.logged_in = True
+        cls.token = r.json()['token']
+        cls.logged_in = True
+        cls.last_login = datetime.now()
         return True
 
+    def _is_token_valid(self):
+        return (datetime.now() - self.last_login).seconds < TOKEN_LIFETIME
+
+    def _validate_token(self):
+        if not self._is_token_valid():
+            logging.info("Token expired, logging in again...")
+            Service.login()
+
     def valid_user(self):
+        self._validate_token()
         try:
             r = requests.get(USER_URL, headers={
                              'Content-Type': 'application/json',
@@ -52,7 +72,7 @@ class Service:
         pass
 
         user_info = r.json()
-        logging.info(user_info)
+        logging.debug(user_info)
         if user_info['didDonate'] and datetime.now() > datetime.fromtimestamp(user_info['donationExpire'] / 1000):
             logging.error("Donation expired")
             return False
@@ -63,7 +83,8 @@ class Service:
         try:
             self._find_location()
         except SystemExit as err:
-            raise err
+            logging.error(err)
+            return False
 
         if not self.active:
             logging.error(f'Locast not available in {self.city}')
@@ -79,6 +100,9 @@ class Service:
         else:
             self._set_attrs_from_geo(IP_URL)
 
+        logging.info(
+            f'Location: {self.city}, dma: {self.dma}, zip: {self.zipcode}')
+
     def _set_attrs_from_geo(self, url):
         try:
             r = requests.get(url, headers={'Content-Type': 'application/json'})
@@ -86,15 +110,19 @@ class Service:
         except requests.exceptions.HTTPError as err:
             raise SystemExit(err)
 
+        if r.status_code == 204:
+            raise SystemExit(f"Geo not found for {url}")
+
         geo = r.json()
         self.location = {
             'latitude': geo['latitude'], 'longitude': geo['longitude']}
         self.dma = int(geo['DMA'])
         self.active = geo['active']
         self.city = geo['name']
-        logging.info(geo)
+        logging.debug(geo)
 
     def _load_stations(self):
+        self._validate_token()
         if not self.logged_in:
             raise SystemExit("User not logged in")
         try:
@@ -150,6 +178,7 @@ class Service:
                 }
 
     def get_station_stream_uri(self, station_id):
+        self._validate_token()
         url = f'{WATCH_URL}/{station_id}/{self.location["latitude"]}/{self.location["longitude"]}'
 
         try:
