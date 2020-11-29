@@ -8,9 +8,9 @@
     <friendlyName>{{friendly_name}}</friendlyName>
     <manufacturer>Locast4Plex</manufacturer>
     <modelName>{{device_model}}</modelName>
-    <modelNumber>{{device_model}}</modelNumber>
+    <modelNumber>{{device_version}}</modelNumber>
     <serialNumber/>
-    <UDN>uuid:{{uuid}}</UDN>
+    <UDN>uuid:{{uid}}</UDN>
   </device>
-  <URLBase>http://{{url_base}}</URLBase>
+  <URLBase>http://{{host_and_port}}</URLBase>
 </root>
