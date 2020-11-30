@@ -240,7 +240,6 @@ class Service:
         return r.json()
 
     def _detect_callsign(self, input: str) -> Tuple[str, str]:
-        print(input)
         """Detect a call sign and possibly subchannel from a string
 
         Args:
