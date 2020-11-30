@@ -10,11 +10,6 @@ from pathlib import Path
 FACILITIES_URL = 'https://transition.fcc.gov/ftp/Bureaus/MB/Databases/cdbs/facility.zip'
 DMA_URL = 'http://api.locastnet.org/api/dma'
 
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
-
-
 class Facilities:
     def __init__(self):
         """Provides an interface to FCC 'facilities' that contain information on US TV channels

@@ -136,6 +136,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: locast.
         Returns:
             Response: HTTP response with content_type 'video/mpeg; codecs="avc1.4D401E'
         """
+        logging.info(f"Watching streaning {channel_id} on {host_and_port} for {locast_service.city}")
         uri = locast_service.get_station_stream_uri(channel_id)
 
         ffmpeg = config.ffmpeg or 'ffmpeg'

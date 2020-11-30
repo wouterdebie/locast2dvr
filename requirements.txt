@@ -18,7 +18,6 @@ iso8601==0.1.13
 itsdangerous==1.1.0
 Jinja2==2.11.2
 keyring==21.5.0
--e git+git@github.com:wouterdebie/locast2dvr.git@6c8567ebcfe4e6ac983304a04a6c14cca3f1a893#egg=locast2dvr
 m3u8==0.7.1
 MarkupSafe==1.1.1
 packaging==20.7
