@@ -7,7 +7,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
 
 setup(
     name='locast4plex',
-    version='0.1.0',
+    version='0.1.6',
     description='locast to Plex Media Server integration',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,21 +18,22 @@ setup(
     py_modules=['locast4plex'],
     packages=setuptools.find_packages(),
     include_package_data=True,
+    python_requires='~=3.7',
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
     ],
     install_requires=[
-        'click',
-        'click>=7.1.2',
-        'click-config-file>=0.6.0',
-        'click-option-group>=0.5.1',
-        'Flask>=1.1.2',
-        'fuzzywuzzy>=0.18.0',
-        'm3u8>=0.7.1',
-        'requests>=2.24.0',
-        'waitress>=1.4.4'
+        'click~=7.1.0',
+        'click-config-file~=0.6.0',
+        'click-option-group~=0.5.0',
+        'Flask~=1.1.0',
+        'fuzzywuzzy~=0.18.0',
+        'm3u8~=0.7.0',
+        'requests~=2.24.0',
+        'waitress~=1.4.0',
+        'Paste~=3.5.0'
     ],
     entry_points='''
         [console_scripts]

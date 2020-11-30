@@ -7,7 +7,7 @@ import click
 import click_config_file
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
-from utils import Configuration
+from .utils import Configuration
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
@@ -46,7 +46,7 @@ def cli(*args, **config):
         sys.exit(1)
 
     import locast
-    from dvr import DVR
+    from .dvr import DVR
 
     # Login to locast.org. We only have to do this once
     try:

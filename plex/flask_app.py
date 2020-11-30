@@ -2,12 +2,12 @@ import logging
 import subprocess
 
 import locast
-import utils
+from locast4plex.utils import Configuration
 from flask import Flask, Response, jsonify, request
 from flask.templating import render_template
 
 
-def FlaskApp(config: utils.Configuration, port: int, uid: str, locast_service: locast.Service) -> Flask:
+def FlaskApp(config: Configuration, port: int, uid: str, locast_service: locast.Service) -> Flask:
     """Create a Flask app that is used to interface with PMS and acts like a DVR device
 
     Args:
