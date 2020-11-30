@@ -65,7 +65,11 @@ class Facilities:
                 data = file.read()
         else:
             logging.info("Downloading FCC facilities..")
+            # Disabling weak dh check. FCC should update their servers.
+            ciphers = requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS
+            requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
             r = requests.get(FACILITIES_URL)
+            requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS = ciphers
             r.raise_for_status()
             data = r.content
             logging.info("Caching facilities...")
