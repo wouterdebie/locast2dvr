@@ -3,3 +3,5 @@ config
 .vscode
 **/__pycache__
 locast4plex.egg-info/
+build
+dist
