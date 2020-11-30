@@ -37,7 +37,7 @@ Useful parameters:
 - `username` (required): locast.org username
 - `password` (required): locast.org password
 - `uid`: a unique identifier that is used by PMS/Emby to identify a specific DVR device. (*NOTE: If this parameter isn't specified, it will be automatically generated, but not persisted!*)
-- `bind`: address to bind the locast2dvr service to (defaults to `0.0.0.0`)
+- `bind`: address to bind the locast2dvr service to (defaults to `127.0.0.1`)
 - `port`: tcp port to bind the locast2dvr service to (defaults to `6077`)
 - `ffmpeg`: path to `ffmpeg` binary (optional if `ffmpeg` is in `$PATH`).
 - `verbose`: enable verbose logging of HTTP requests
@@ -65,8 +65,6 @@ locast2dvr allows starting multiple instances. This is done using the `override-
 When using multiple regions, locast2dvr will start multiple instances on TCP ports starting at the value that is specified with the `port` (or the default `6077`) argument and incremented by one. Also, the UUID of each device will be appended with `_x`, where `x` is incremented by one for each instance.
 
 Note: PMS supports multiple devices, but not multiple Electronic Programming Guides (EPGs). Emby does support both.
-
-Note that if any of the zipcodes is invalid (meaning locast isn't available for a zipcode), the server will stop completely.
 
 ## TODO
 - Unit tests

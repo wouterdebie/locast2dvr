@@ -12,7 +12,7 @@ from .utils import Configuration
 
 
 class DVR:
-    def __init__(self, geo: locast.Geo, port: int, uid: str, config: Configuration):
+    def __init__(self, geo: locast.Geo, port: int, uid: str, config: Configuration, ssdp: SSDPServer):
         """Representation of a DVR. This class ties a Flask app to a locast.Service
            and starts an HTTP server on the given port. It also registers the DVR on
            using SSDP to make it easy for PMS to find the device.
@@ -22,11 +22,13 @@ class DVR:
             port (int): TCP port the DVR listens to
             uid (str): Unique identifier of this DVR
             config (Configuration): global application configuration
+            ssdp (SSDPServer): SSDP server instance to register at
         """
         self.geo = geo
         self.config = config
         self.port = port
         self.uid = uid
+        self.ssdp = ssdp
 
     def start(self):
         """Start the DVR 'device'
@@ -42,7 +44,7 @@ class DVR:
         app = FlaskApp(self.config, self.port, self.uid, ls)
 
         # Insert logging middle ware if we want verbose access logging
-        if self.config.verbose:
+        if self.config.verbose > 0:
             app = TransLogger(app)
 
         # Start the Flask app on a separate thread
@@ -52,7 +54,6 @@ class DVR:
 
         # Register our Flask app and start an SSDPServer for this specific instance
         # on a separate thread
-        ssdp = SSDPServer()
-        ssdp.register('local', f'uuid:{self.uid}::upnp:rootdevice',
-                      'upnp:rootdevice', f'http://{self.config.bind_address}:{self.port}/device.xml')
-        threading.Thread(target=ssdp.run).start()
+
+        self.ssdp.register('local', f'uuid:{self.uid}::upnp:rootdevice',
+                           'upnp:rootdevice', f'http://{self.config.bind_address}:{self.port}/device.xml')

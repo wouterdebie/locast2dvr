@@ -131,6 +131,7 @@ class SSDPServer:
     def send_it(self, response, destination, delay, usn):
         logger.debug('send discovery response delayed by %ds for %s to %r' % (
             delay, usn, destination))
+        logger.debug('RESONSE: %r' % response)
         try:
             self.sock.sendto(response.encode(), destination)
         except (AttributeError, socket.error) as msg:
@@ -194,7 +195,7 @@ class SSDPServer:
 
         resp.extend([': '.join(x) for x in list(stcpy.items())])
         resp.extend(('', ''))
-        logger.debug('do_notify content', resp)
+        logger.debug('do_notify content %r' % resp)
         try:
             self.sock.sendto('\r\n'.join(resp).encode(),
                              (SSDP_ADDR, SSDP_PORT))
