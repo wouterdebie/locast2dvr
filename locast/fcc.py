@@ -48,12 +48,12 @@ class Facilities:
 
     def _download(self) -> bytes:
         """Download facilities zipfile from the FCC. This function also caches the facilities
-           in $HOME/.locast4plex/facilities.zip and will load from cache if possible
+           in $HOME/.locast2dvr/facilities.zip and will load from cache if possible
 
         Returns:
             bytes: contents of the facilities zip file (compressed)
         """
-        cache_dir = os.path.join(Path.home(), '.locast4plex')
+        cache_dir = os.path.join(Path.home(), '.locast2dvr')
         cache_file = os.path.join(cache_dir, 'facilities.zip')
 
         if not os.path.exists(cache_dir):

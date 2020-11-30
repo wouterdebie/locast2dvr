@@ -6,16 +6,16 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
     long_description = f.read()
 
 setup(
-    name='locast4plex',
-    version='0.1.6',
+    name='locast2dvr',
+    version='0.1.0',
     description='locast to Plex Media Server integration',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/wouterdebie/locast4plex",
+    url="https://github.com/wouterdebie/locast2dvr",
     author="Wouter de Bie",
     author_email="pypi@evenflow.nl",
     license="MIT",
-    py_modules=['locast4plex'],
+    py_modules=['locast2dvr'],
     packages=setuptools.find_packages(),
     include_package_data=True,
     python_requires='~=3.7',
@@ -37,6 +37,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        locast4plex=locast4plex:cli
+        locast2dvr=locast2dvr:cli
     ''',
 )

@@ -2,6 +2,6 @@ venv
 config
 .vscode
 **/__pycache__
-locast4plex.egg-info/
+locast2dvr.egg-info/
 build
 dist

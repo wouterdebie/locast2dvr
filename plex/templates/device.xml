@@ -6,7 +6,7 @@
   <device>
     <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
     <friendlyName>{{friendly_name}}</friendlyName>
-    <manufacturer>Locast4Plex</manufacturer>
+    <manufacturer>locast2dvr</manufacturer>
     <modelName>{{device_model}}</modelName>
     <modelNumber>{{device_version}}</modelNumber>
     <serialNumber/>

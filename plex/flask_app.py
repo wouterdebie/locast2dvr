@@ -2,7 +2,7 @@ import logging
 import subprocess
 
 import locast
-from locast4plex.utils import Configuration
+from locast2dvr.utils import Configuration
 from flask import Flask, Response, jsonify, request
 from flask.templating import render_template
 
@@ -11,7 +11,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: locast.
     """Create a Flask app that is used to interface with PMS and acts like a DVR device
 
     Args:
-        config (utils.Configuration): locast4plex configuration object
+        config (utils.Configuration): locast2dvr configuration object
         port (int): TCP port this app will be bound to
         uid (str): Unique ID for this app. PMS uses this to identify DVRs
         locast_service (locast.Service): Locast service object
@@ -54,13 +54,13 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: locast.
         """
         data = {
             "FriendlyName": locast_service.city,
-            "Manufacturer": "Locast4Plex",
+            "Manufacturer": "locast2dvr",
             "ModelNumber": config.device_model,
             "FirmwareName": config.device_firmware,
             "TunerCount": config.tuner_count,
             "FirmwareVersion": config.device_version,
             "DeviceID": uid,
-            "DeviceAuth": "locast4plex",
+            "DeviceAuth": "locast2dvr",
             "BaseURL": f"http://{host_and_port}",
             "LineupURL": f"http://{host_and_port}/lineup.json"
         }
