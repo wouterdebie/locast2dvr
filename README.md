@@ -71,4 +71,5 @@ Note: PMS supports multiple devices, but not multiple Electronic Programming Gui
 - Re-download FCC facilities once in a while, since the might go stale
 - Document how to daemonize
 - Dockerize?
+- Ubunut packages?
 - Redo FCC facilities implementation, since there's a O(n) lookup for each facility lookup. This doesn't happen often, but just seems wrong. It's probably better to create a mapping that allows for fast lookups when starting locast2dvr.
