@@ -1,1 +1,1 @@
-include http/templates/*
+include http_interface/templates/*
