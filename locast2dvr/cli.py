@@ -29,11 +29,12 @@ from .utils import Configuration
 @optgroup.group('\nDebug options')
 @optgroup.option('--bytes-per-read', type=int, default=1152000, show_default=True, help='Bytes per read', metavar='BYTES')
 @optgroup.option('--tuner-count', default=3, show_default=True, help='Tuner count', metavar='COUNT')
-@optgroup.option('--device-model', default='HDHR3-US', show_default=True, help='Model name reported to Plex')
-@optgroup.option('--device-firmware', default='hdhomerun3_atsc', show_default=True, help='Model firmware reported to Plex')
-@optgroup.option('--device-version', default='1.2.3456', show_default=True, help='Model version reported to Plex')
+@optgroup.option('--device-model', default='HDHR3-US', show_default=True, help='HDHomerun device model reported to clients')
+@optgroup.option('--device-firmware', default='hdhomerun3_atsc', show_default=True, help='Model firmware reported to clients')
+@optgroup.option('--device-version', default='1.2.3456', show_default=True, help='Model version reported to clients')
 @click_config_file.configuration_option()
 def cli(*args, **config):
+    """Locast to DVR (like Plex or Emby) integration server"""
     c = Configuration(config)
 
     log_level = logging.DEBUG if c.verbose >= 2 else logging.INFO

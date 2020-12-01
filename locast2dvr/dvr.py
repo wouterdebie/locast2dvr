@@ -6,7 +6,7 @@ import waitress
 from paste.translogger import TransLogger
 
 import locast
-from plex import FlaskApp
+from http import FlaskApp
 from ssdp import SSDPServer
 from .utils import Configuration
 

@@ -8,7 +8,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
 setup(
     name='locast2dvr',
     version='0.1.3',
-    description='locast to Plex Media Server integration',
+    description='locast to Plex Media Server/Emby integration',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/wouterdebie/locast2dvr",
