@@ -1,5 +1,5 @@
 username="foo@bar.com"
 password="SuperSecret"
 uuid="MY_UUID"
-verbose="true"
+verbose="1"
 override_zipcodes="90210,55111"

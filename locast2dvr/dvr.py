@@ -5,14 +5,14 @@ import threading
 import waitress
 from paste.translogger import TransLogger
 
-import locast
-from http_interface import FlaskApp
-from ssdp import SSDPServer
+from .http_interface import FlaskApp
+from .locast import Geo, Service
+from .ssdp import SSDPServer
 from .utils import Configuration
 
 
 class DVR:
-    def __init__(self, geo: locast.Geo, port: int, uid: str, config: Configuration, ssdp: SSDPServer):
+    def __init__(self, geo: Geo, port: int, uid: str, config: Configuration, ssdp: SSDPServer):
         """Representation of a DVR. This class ties a Flask app to a locast.Service
            and starts an HTTP server on the given port. It also registers the DVR on
            using SSDP to make it easy for PMS to find the device.
@@ -34,7 +34,7 @@ class DVR:
         """Start the DVR 'device'
         """
         try:
-            ls = locast.Service(self.geo)
+            ls = Service(self.geo)
         except Exception as err:
             logging.error(err)
             os._exit(1)

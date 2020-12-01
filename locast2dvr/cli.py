@@ -8,7 +8,7 @@ import click
 import click_config_file
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
-from ssdp import SSDPServer
+from .ssdp import SSDPServer
 from .utils import Configuration
 
 
@@ -50,12 +50,12 @@ def cli(*args, **config):
         logging.error('ffmpeg not found')
         sys.exit(1)
 
-    import locast
     from .dvr import DVR
+    from .locast import Geo, Service
 
     # Login to locast.org. We only have to do this once
     try:
-        locast.Service.login(c.username, c.password)
+        Service.login(c.username, c.password)
     except Exception as err:
         logging.error(err)
         sys.exit(1)
@@ -63,14 +63,14 @@ def cli(*args, **config):
     # Create Geo objects based on configuration.
     if c.override_location:
         (lat, lon) = c.override_location.split(",")
-        geos = [locast.Geo(latlon={
+        geos = [Geo(latlon={
             'latitude': lat,
             'longitude': lon
         })]
     elif c.override_zipcodes:
-        geos = [locast.Geo(z.strip()) for z in c.override_zipcodes.split(',')]
+        geos = [Geo(z.strip()) for z in c.override_zipcodes.split(',')]
     else:
-        geos = [locast.Geo()]  # No location information means current location
+        geos = [Geo()]  # No location information means current location
 
     ssdp = SSDPServer()
     threading.Thread(target=ssdp.run).start()
