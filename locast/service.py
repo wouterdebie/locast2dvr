@@ -57,7 +57,7 @@ class Service:
         self._load_location_data()
 
     @classmethod
-    def login(cls, username: str, password: str) -> bool:
+    def login(cls, username: str = None, password: str = None) -> bool:
         """Log in to locast.org
 
         This is a class method, so we only have to login once.
@@ -70,8 +70,12 @@ class Service:
             bool: True if successful, False otherwise
 
         """
-        cls.username = username
-        cls.password = password
+
+        if username:
+            cls.username = username
+        if password:
+            cls.password = password
+
         logging.info(f"Locast logging in with {cls.username}")
         try:
             r = requests.post(LOGIN_URL,
