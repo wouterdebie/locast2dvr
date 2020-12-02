@@ -260,7 +260,7 @@ class Service:
         return None
 
     def get_station_stream_uri(self, station_id: str) -> str:
-        """Get the steam URL for a station
+        """Get the steam URL for a station. This always returns the URL with the highest resolution.
 
         Args:
             station_id (str): Locast station ID

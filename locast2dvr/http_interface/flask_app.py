@@ -3,7 +3,7 @@ import subprocess
 
 from locast2dvr.locast import Service
 from locast2dvr.utils import Configuration
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, jsonify, request, redirect
 from flask.templating import render_template
 
 
@@ -88,6 +88,23 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
             }
         return jsonify(lineup_status)
 
+    @app.route('/lineup.m3u', methods=['GET'])
+    def m3u() -> Response:
+        """Returns all stations in m3u format
+
+        Returns:
+            Response: m3u in text/plain
+        """
+        return "\n".join(
+            [(
+                f"#EXTINF:0,{station['name']}"
+                f'tvg-name="{station["name"]}"'
+                f'tvg-id="{station["id"]}"'
+                f'tvg-chno="{station["channel"]}"\n'
+                f"http://{host_and_port}/watch/{station['id']}.m3u\n"
+            ) for station in stations]
+        )
+
     @app.route('/lineup.json', methods=['GET'])
     def lineup_json() -> Response:
         """Returns a URL for each station that PMS can use to stream in JSON
@@ -125,6 +142,21 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
             return ('', 204)
         return ('f{scan} is not a valid scan command', 400)
 
+    @app.route('/watch/<channel_id>.m3u')
+    def watch_m3u(channel_id: str) -> Response:
+        """Stream the channel based on it's ID. This route redirects to a locast m3u.
+
+        Args:
+            channel_id (str): Channel ID
+
+        Returns:
+            Response: Redirect to a locast m3u
+        """
+        logging.info(
+            f"Watching streanichannelng {channel_id} on {host_and_port} for {locast_service.city}")
+        uri = locast_service.get_station_stream_uri(channel_id)
+        return redirect(uri, code=302)
+
     @app.route('/watch/<channel_id>')
     def watch(channel_id: str) -> Response:
         """Stream a channel based on it's ID. The route streams data as long as its connected.
@@ -137,7 +169,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
             Response: HTTP response with content_type 'video/mpeg; codecs="avc1.4D401E'
         """
         logging.info(
-            f"Watching streaning {channel_id} on {host_and_port} for {locast_service.city}")
+            f"Watching channel {channel_id} on {host_and_port} for {locast_service.city}")
         uri = locast_service.get_station_stream_uri(channel_id)
 
         ffmpeg = config.ffmpeg or 'ffmpeg'

@@ -1,6 +1,6 @@
 # locast2dvr
 
-This application provides an interface between locast.org and [Plex Media Server (PMS)](https://plex.tv) or [Emby](https://emby.media) by acting like a [HDHomerun](https://www.silicondust.com/) Tuner.
+This application provides an interface between locast.org and [Plex Media Server (PMS)](https://plex.tv) or [Emby](https://emby.media) by acting like a [HDHomerun](https://www.silicondust.com/) or an m3u Tuner.
 
 locast2dvr can imitate one or more DVR tuners and provides geo cloaking across regions.
 
@@ -12,6 +12,7 @@ I rewrote locast2plex to be able to more easily add functionality, use libraries
 - Override your location using zipcode or GPS coordinates
 - Multiple DVR tuners in a single server
 - SSDP for easy discovery of DVR devices in PMS or Emby
+- Acts like either a HDHomerun Tuner or m3u tuner
 
 ## Prerequisites
 - Active locast.org account with an active donation. Locast doesn't allow you to stream without a donation.
@@ -64,12 +65,20 @@ locast2dvr allows starting multiple instances. This is done using the `override-
 
 When using multiple regions, locast2dvr will start multiple instances on TCP ports starting at the value that is specified with the `port` (or the default `6077`) argument and incremented by one. Also, the UUID of each device will be appended with `_x`, where `x` is incremented by one for each instance.
 
-Note: PMS supports multiple devices, but not multiple Electronic Programming Guides (EPGs). Emby does support both.
+Note: PMS supports multiple devices, but does not support multiple Electronic Programming Guides (EPGs). Emby does support both. I personally use Emby since it allows for multiple EPGs.
+
+### Usage in PMS or Emby
+
+locast2dvr can act as both a HDHomerun device or as an m3u tuner. Plex mainly supports HDHomerun, while Emby supports both. In case locast2dvr is used as an HDHomerun device it will use `ffmpeg` to copy the `mpegts` stream from locast to the Media server. When using locast2dvr as an m3u tuner, it will pass on the m3u from locast to the media server without any decoding.
+
+- For use as a HDHomerun tuner, use `IP:PORT` (defaults to `127.0.0.1:6077`) to connect
+- For use as an m3u tuner, use `http://IP:PORT/lineup.m3u` (defaults to `http://127.0.0.1:6077/lineup.m3u`) as the URL to connect.
 
 ## TODO
 - Unit tests
 - Re-download FCC facilities once in a while, since the might go stale
 - Document how to daemonize
 - Dockerize?
-- Ubunut packages?
+- Ubuntu packages?
+- Standardize logging between app and Translogger for waitress logging
 - Redo FCC facilities implementation, since there's a O(n) lookup for each facility lookup. This doesn't happen often, but just seems wrong. It's probably better to create a mapping that allows for fast lookups when starting locast2dvr.
