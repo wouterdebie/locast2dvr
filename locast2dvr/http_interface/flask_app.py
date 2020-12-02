@@ -97,9 +97,9 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         """
         return "\n".join(
             [(
-                f"#EXTINF:0,{station['name']}"
-                f'tvg-name="{station["name"]}"'
-                f'tvg-id="{station["id"]}"'
+                f"#EXTINF:0, {station['name']} "
+                f'tvg-name="{station["name"]} "'
+                f'tvg-id="{station["name"]} "'
                 f'tvg-chno="{station["channel"]}"\n'
                 f"http://{host_and_port}/watch/{station['id']}.m3u\n"
             ) for station in stations]
