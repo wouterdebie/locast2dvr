@@ -184,14 +184,14 @@ class Service:
         self.city = geo['name']
         logging.debug(geo)
 
-    def get_stations(self) -> dict:
+    def get_stations(self) -> list:
         """Get all station information and return in such a way that PMS can use it
 
         This is done by getting station information from locast.org and and where necessary
         complement channel numbers this with data from the FCC.
 
         Returns:
-            dict: [description]
+            list: stations
         """
         locast_stations = self._get_locast_stations()
 
@@ -225,11 +225,11 @@ class Service:
 
         return locast_stations
 
-    def _get_locast_stations(self) -> dict:
+    def _get_locast_stations(self) -> list:
         """Get all the stations from locast for the current DMA
 
         Returns:
-            dict: Locast stations
+            list: Locast stations
 
         Raises:
             HTTPError: if the HTTP request to locast fails

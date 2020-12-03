@@ -23,6 +23,9 @@ from .utils import Configuration
 @click.option('-p', '--port', default=6077, show_default=True, help='Bind tcp port', metavar='PORT')
 @click.option('-f', '--ffmpeg', help='Path to ffmpeg binary', metavar='PATH', default='ffmpeg', show_default=True)
 @click.option('-v', '--verbose', count=True, help='Enable verbose logging')
+@optgroup.group('\nMultiplexing', cls=MutuallyExclusiveOptionGroup)
+@optgroup.option('-m', '--multiplex', is_flag=True, help='Multiplex devices AND start individual instances (multiplexer is started on the last port + 1)')
+@optgroup.option('-M', '--megaplex', is_flag=True, help='Multiplex devices and DO NOT start individual instances')
 @optgroup.group('\nLocation overrides', cls=MutuallyExclusiveOptionGroup)
 @optgroup.option('--override-location', type=str, help='Override location', metavar="LAT,LONG")
 @optgroup.option('--override-zipcodes', type=str, help='Override zipcodes', metavar='ZIP')
@@ -52,6 +55,7 @@ def cli(*args, **config):
 
     from .dvr import DVR
     from .locast import Geo, Service
+    from .multiplexer import Multiplexer
 
     # Login to locast.org. We only have to do this once
     try:
@@ -75,8 +79,28 @@ def cli(*args, **config):
     ssdp = SSDPServer()
     threading.Thread(target=ssdp.run).start()
 
+    if c.multiplex:
+        multiplexer = Multiplexer(c.port + len(geos), c)
+    elif c.megaplex:
+        multiplexer = Multiplexer(c.port, c)
+    else:
+        multiplexer = None
+
+    if c.megaplex:
+        logging.info("Megaplexing! Not starting separate HTTP instances")
+        start_http = False
+    else:
+        start_http = True
+
     # Start as many DVR instances as there are geos.
     for i, geo in enumerate(geos):
         port = c.port + i
         uid = f"{c.uid}_{i}"
-        DVR(geo, port, uid, c, ssdp).start()
+        dvr = DVR(geo, port, uid, c, ssdp, http=start_http)
+        if multiplexer:
+            multiplexer.register(dvr)
+        dvr.start()
+
+    # Start the multiplexer
+    if multiplexer:
+        multiplexer.start()
