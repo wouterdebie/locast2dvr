@@ -57,12 +57,13 @@ class Multiplexer:
             list: A list with all station information
         """
         logging.info(f"Multiplexer: getting all station")
-        self.station_mapping = {}
+        self.station_service_mapping = {}
         stations = []
 
         for d in self.dvrs:
             for station in d.locast_service.get_stations():
                 stations.append(station)
+                self.station_service_mapping[str(station['id'])] = d.locast_service
 
         logging.info(f"Multiplexer: {len(stations)} individual stations")
 
@@ -77,4 +78,4 @@ class Multiplexer:
         Returns:
             str: URL
         """
-        return self.station_mapping[station_id].get_station_stream_uri(station_id)
+        return self.station_service_mapping[station_id].get_station_stream_uri(station_id)

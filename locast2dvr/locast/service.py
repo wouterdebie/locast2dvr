@@ -197,6 +197,7 @@ class Service:
 
         fake_channel = 1000
         for station in locast_stations:
+            station['city'] = self.city
             # See if station conforms to "X.Y Name"
             m = re.match(r'(\d+\.\d+) .+', station['callSign'])
             if m:

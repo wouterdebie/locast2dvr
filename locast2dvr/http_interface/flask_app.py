@@ -1,10 +1,12 @@
 import logging
+import re
 import subprocess
 from datetime import datetime
+
+from flask import Flask, Response, jsonify, redirect, request
+from flask.templating import render_template
 from locast2dvr.locast import Service
 from locast2dvr.utils import Configuration
-from flask import Flask, Response, jsonify, request, redirect
-from flask.templating import render_template
 
 
 def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service) -> Flask:
@@ -98,13 +100,21 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         return "\n".join(
             [(
                 f"#EXTINF:-1, {station['name']} "
-                f'tvg-name="{station["callSign"]}" '
-                f'tvg-id="{station["id"]}" '
+                f'tvg-name="{name_only(station.get("callSign")) or station.get("name")} ({station["city"]})" '
+                f'tvg-id="channel.{station["id"]}" '
                 f'tvg-chno="{station["channel"]}" '
                 '\n'
                 f"http://{host_and_port}/watch/{station['id']}.m3u\n"
             ) for station in stations]
         )
+
+    @app.template_filter()
+    def name_only(value):
+        m = re.match(r'\d+\.\d+ (.+)', value)
+        if m:
+            return m.group(1)
+        else:
+            return value
 
     @app.route('/lineup.json', methods=['GET'])
     def lineup_json() -> Response:
