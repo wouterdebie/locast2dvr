@@ -53,9 +53,8 @@ def cli(*args, **config):
         logging.error('ffmpeg not found')
         sys.exit(1)
 
-    from .dvr import DVR
+    from .dvr import DVR, Multiplexer
     from .locast import Geo, Service
-    from .multiplexer import Multiplexer
 
     # Login to locast.org. We only have to do this once
     try:
@@ -80,22 +79,22 @@ def cli(*args, **config):
     threading.Thread(target=ssdp.run).start()
 
     if c.multiplex and c.multiplex_debug:
-        multiplexer = Multiplexer(c.port + len(geos), c)
-        start_http = True
+        multiplexer = Multiplexer(c.port + len(geos), c, ssdp)
     elif c.multiplex:
-        multiplexer = Multiplexer(c.port, c)
-        start_http = False
+        multiplexer = Multiplexer(c.port, c, ssdp)
     else:
         multiplexer = None
-        start_http = True
 
     # Start as many DVR instances as there are geos.
     for i, geo in enumerate(geos):
-        port = c.port + i
         uid = f"{c.uid}_{i}"
-        dvr = DVR(geo, port, uid, c, ssdp, http=start_http)
+        port = c.port + i
         if multiplexer:
+            port = port if c.multiplex_debug else 0
+            dvr = DVR(geo, port, uid, c, ssdp)
             multiplexer.register(dvr)
+        else:
+            dvr = DVR(geo, port, uid, c, ssdp)
         dvr.start()
 
     # Start the multiplexer

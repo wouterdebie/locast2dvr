@@ -109,7 +109,15 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         )
 
     @app.template_filter()
-    def name_only(value):
+    def name_only(value: str) -> str:
+        """Get the name part of a callSign. '4.1 CBS' -> 'CBS'
+
+        Args:
+            value (str): String to parse
+
+        Returns:
+            str: Parsed string or original value
+        """
         m = re.match(r'\d+\.\d+ (.+)', value)
         if m:
             return m.group(1)
