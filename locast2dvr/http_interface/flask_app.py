@@ -126,6 +126,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         Returns:
             Response: JSON containing the EPG for this DMA
         """
+        stations = locast_service.get_stations()
         return jsonify(stations)
 
     @app.template_filter()
@@ -184,11 +185,13 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
 
     @app.route('/epg.xml', methods=['GET'])
     def epg_xml() -> Response:
-        """Render the EPG as XMLTV
+        """Render the EPG as XMLTV. This will trigger a refetch of all stations from locast.
 
         Returns:
             Response: XMLTV
         """
+        stations = locast_service.get_stations()
+
         xml = render_template('epg.xml',
                               stations=stations,
                               url_base=host_and_port)
@@ -206,7 +209,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
                               url_base=host_and_port).encode("utf-8")
         return Response(xml, mimetype='text/xml')
 
-    @app.route('/lineup.post', methods=['POST'])
+    @app.route('/lineup.post', methods=['POST', 'GET'])
     def lineup_post():
         """Initiate a rescan of stations for this DVR"""
         scan = request.args.get('scan')
@@ -214,9 +217,9 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
             station_scan = True
             stations = locast_service.get_stations()
             station_scan = False
-
             return ('', 204)
-        return ('f{scan} is not a valid scan command', 400)
+
+        return (f'{scan} is not a valid scan command', 400)
 
     @app.route('/watch/<channel_id>.m3u')
     def watch_m3u(channel_id: str) -> Response:

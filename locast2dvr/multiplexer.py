@@ -58,12 +58,21 @@ class Multiplexer:
         """
         logging.info(f"Multiplexer: getting all station")
         self.station_mapping = {}
-        stations = []
+        call_sign_mapping = {}
+        stations = 0
         for d in self.dvrs:
             for station in d.locast_service.get_stations():
-                stations.append(station)
+                stations += 1
                 self.station_mapping[str(station['id'])] = d.locast_service
-        return stations
+                if station['callSign'] in call_sign_mapping:
+                    logging.debug(f"{station['callSign']} already in list")
+                call_sign_mapping[station['callSign']] = station
+
+        deduped = call_sign_mapping.values()
+        logging.info(
+            f"Multiplexer: {stations} individual stations, {len(deduped)} deduped stations")
+
+        return deduped
 
     def get_station_stream_uri(self, station_id: str) -> str:
         """Return the stream URL for a specific station_id
