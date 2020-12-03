@@ -1,6 +1,6 @@
 import logging
 import subprocess
-
+from datetime import datetime
 from locast2dvr.locast import Service
 from locast2dvr.utils import Configuration
 from flask import Flask, Response, jsonify, request, redirect
@@ -97,10 +97,11 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         """
         return "\n".join(
             [(
-                f"#EXTINF:0, {station['name']} "
-                f'tvg-name="{station["name"]}" '
-                f'tvg-id="{station["name"]}" '
-                f'tvg-chno="{station["channel"]}"\n'
+                f"#EXTINF:-1, {station['name']} "
+                f'tvg-name="{station["callSign"]}" '
+                f'tvg-id="{station["id"]}" '
+                f'tvg-chno="{station["channel"]}" '
+                '\n'
                 f"http://{host_and_port}/watch/{station['id']}.m3u\n"
             ) for station in stations]
         )
@@ -118,6 +119,81 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
             "URL": f"http://{host_and_port}/watch/{station['id']}"
         } for station in stations])
 
+    @app.route('/epg', methods=['GET'])
+    def epg() -> Response:
+        """Returns the Electronic Programming Guide in json format
+
+        Returns:
+            Response: JSON containing the EPG for this DMA
+        """
+        return jsonify(stations)
+
+    @app.template_filter()
+    def format_date(value: str) -> str:
+        """Convert an epoch timestamp to YYYYmmdd
+
+        Args:
+            value (str): Epoch timestamp string
+
+        Returns:
+            str: String as YYYYmmdd
+        """
+        return datetime.utcfromtimestamp(value/1000).strftime('%Y%m%d')
+
+    @app.template_filter()
+    def format_time(value: str) -> str:
+        """Return an epoch timestamp to YYYYmmdddHHMMSS
+
+        Args:
+            value (str): Epoch timestamp string
+
+        Returns:
+            str: String as YYYYmmdddHHMMSS
+        """
+        return datetime.utcfromtimestamp(value/1000).strftime('%Y%m%d%H%M%S')
+
+    @app.template_filter()
+    def aspect(value: str) -> str:
+        """Convert a locast 'videoProperties' string to an aspect ratio
+
+        Args:
+            value (str): locast 'videoProperties' string
+
+        Returns:
+            str: aspect ratio. Either '4:3' or '16:9'
+        """
+        for r in ["1080", "720", "HDTV"]:
+            if r in value:
+                return "16:9"
+        return "4:3"
+
+    @app.template_filter()
+    def quality(value: str) -> str:
+        """Convert a locast 'videoProperties' string to a quality
+
+        Args:
+            value (str): locast 'videoProperties' string
+
+        Returns:
+            str: quality. Either 'SD' or 'HDTV'
+        """
+        if "HDTV" in value:
+            return "HDTV"
+        else:
+            return "SD"
+
+    @app.route('/epg.xml', methods=['GET'])
+    def epg_xml() -> Response:
+        """Render the EPG as XMLTV
+
+        Returns:
+            Response: XMLTV
+        """
+        xml = render_template('epg.xml',
+                              stations=stations,
+                              url_base=host_and_port)
+        return Response(xml, mimetype='text/xml')
+
     @app.route('/lineup.xml', methods=['GET'])
     def lineup_xml() -> Response:
         """Returns a URL for each station that PMS can use to stream in XML
@@ -127,7 +203,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         """
         xml = render_template('lineup.xml',
                               stations=stations,
-                              url_base=host_and_port)
+                              url_base=host_and_port).encode("utf-8")
         return Response(xml, mimetype='text/xml')
 
     @app.route('/lineup.post', methods=['POST'])
@@ -153,9 +229,8 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
             Response: Redirect to a locast m3u
         """
         logging.info(
-            f"Watching streanichannelng {channel_id} on {host_and_port} for {locast_service.city}")
-        uri = locast_service.get_station_stream_uri(channel_id)
-        return redirect(uri, code=302)
+            f"Watching channel {channel_id} on {host_and_port} for {locast_service.city}")
+        return redirect(locast_service.get_station_stream_uri(channel_id), code=302)
 
     @app.route('/watch/<channel_id>')
     def watch(channel_id: str) -> Response:
@@ -166,7 +241,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
             channel_id (str): Channel ID
 
         Returns:
-            Response: HTTP response with content_type 'video/mpeg; codecs="avc1.4D401E'
+            Response: HTTP response with content_type 'video/mpeg; codecs="avc1.4D401E"'
         """
         logging.info(
             f"Watching channel {channel_id} on {host_and_port} for {locast_service.city}")

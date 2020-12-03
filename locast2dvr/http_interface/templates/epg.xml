@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE tv SYSTEM "https://raw.githubusercontent.com/XMLTV/xmltv/master/xmltv.dtd">
+
+<tv generator-info-name="locast2dvr">
+{%- for station in stations %}
+  <channel id="channel.{{station['id']}}">
+    <display-name lang="en">{{station['callSign']}}</display-name>
+    <display-name lang="en">{{station['name']}}</display-name>
+    <display-name lang="en">{{station['channel']}}</display-name>
+    <display-name lang="en">{{station['id']}}</display-name>
+    <icon src="{{station['logo226Url']}}" />
+  </channel>
+{%- endfor %}
+{%- for station in stations %}
+  {%- for program in station['listings'] %}
+  <programme start="{{program['startTime']|format_time}} +0000" stop="{{(program['startTime'] + program['duration'] * 1000)|format_time}} +0000" channel="channel.{{station['id']}}">
+    <title lang="en">{{program['title']}}</title>
+    {%- if program['description'] %}
+    <desc lang="en">{{program['description']}}</desc>
+    {%- endif %}
+    {%- if program['releaseDate'] %}
+    <date>{{program['releaseDate']|format_date}}</date>
+    {%- endif %}
+    {%- if program['genres'] -%}
+    {%- set categories = program['genres'].split(', ') -%}
+    {%- for category in categories %}
+    <category lang="en">{{category}}</category>
+    {%- endfor %}
+    {%- endif %}
+    <length units="seconds">{{program['duration']}}</length>
+    {%- if program['preferredImage'] %}
+    <icon src="{{program['preferredImage']}}" height="{{program['preferredImageHeight']}}" width="{{program['preferredImageWidth']}}"/>
+    {%- endif %}
+    {%- if program['episodeNumber'] and program['seasonNumber'] %}
+    <episode-num system="xmltv_ns">{{program['seasonNumber'] - 1}}.{{program['episodeNumber'] - 1}}.</episode-num>
+    {%- elif program['episodeNumber'] %}
+    <episode-num system="xmltv_ns">0.{{program['episodeNumber'] - 1}}.</episode-num>
+    {%- endif %}
+    {%- if program['videoProperties'] %}
+    <video>
+      <present>yes</present>
+      <aspect>{{program['videoProperties']|aspect}}</aspect>
+      <quality>{{program['videoProperties']|quality}}</quality>
+    </video>
+    {%- endif %}
+    <audio>
+      <present>yes</present>
+      <stereo>stereo</stereo>
+    </audio>
+  </programme>
+  {%- endfor -%}
+{%- endfor %}
+</tv>

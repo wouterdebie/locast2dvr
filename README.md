@@ -1,6 +1,6 @@
 # locast2dvr
 
-This application provides an interface between locast.org and [Plex Media Server (PMS)](https://plex.tv) or [Emby](https://emby.media) by acting like a [HDHomerun](https://www.silicondust.com/) or an m3u Tuner.
+This application provides an interface between locast.org and [Plex Media Server (PMS)](https://plex.tv) or [Emby](https://emby.media) by acting like a [HDHomerun](https://www.silicondust.com/) or an m3u Tuner and an XMLTV provider.
 
 locast2dvr can imitate one or more DVR tuners and provides geo cloaking across regions.
 
@@ -13,6 +13,7 @@ I rewrote locast2plex to be able to more easily add functionality, use libraries
 - Multiple DVR tuners in a single server
 - SSDP for easy discovery of DVR devices in PMS or Emby
 - Acts like either a HDHomerun Tuner or m3u tuner
+- Provides locast EPG information as an XMLTV guide
 
 ## Prerequisites
 - Active locast.org account with an active donation. Locast doesn't allow you to stream without a donation.
@@ -73,6 +74,8 @@ locast2dvr can act as both a HDHomerun device or as an m3u tuner. Plex mainly su
 
 - For use as a HDHomerun tuner, use `IP:PORT` (defaults to `127.0.0.1:6077`) to connect
 - For use as an m3u tuner, use `http://IP:PORT/lineup.m3u` (defaults to `http://127.0.0.1:6077/lineup.m3u`) as the URL to connect.
+
+locast2dvr also provides Electronic Programming Guide (EPG) information from locast. This is served in [XMLTV](http://wiki.xmltv.org/) format. Emby has support for XMLTV and can be used by adding `http://IP:PORT/epg.xml`  (defaults to `http://127.0.0.1:6077/epg.xml`) as an XMLTV TV Guide Data Provider.
 
 ## TODO
 - Unit tests

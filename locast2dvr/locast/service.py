@@ -292,5 +292,5 @@ class Service:
         best_resolution = sorted(m3u8_data.playlists,
                                  key=lambda pl: pl.stream_info.resolution).pop()
 
-        logging.info(f'Resolution: {best_resolution}')
+        logging.debug(f'Resolution: {best_resolution}')
         return best_resolution.absolute_uri
