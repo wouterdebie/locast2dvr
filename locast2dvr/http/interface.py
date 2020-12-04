@@ -249,7 +249,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             Response: Redirect to a locast m3u
         """
         log.info(
-            f"Watching channel {channel_id} on {host_and_port} for {locast_service.city}")
+            f"Watching channel {channel_id} on {host_and_port} for {locast_service.city} using m3u")
         return redirect(locast_service.get_station_stream_uri(channel_id), code=302)
 
     @app.route('/watch/<channel_id>')
@@ -264,7 +264,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             Response: HTTP response with content_type 'video/mpeg; codecs="avc1.4D401E"'
         """
         log.info(
-            f"Watching channel {channel_id} on {host_and_port} for {locast_service.city}")
+            f"Watching channel {channel_id} on {host_and_port} for {locast_service.city} using ffmpeg")
         uri = locast_service.get_station_stream_uri(channel_id)
 
         ffmpeg = config.ffmpeg or 'ffmpeg'
