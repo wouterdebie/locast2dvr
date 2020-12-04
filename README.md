@@ -95,3 +95,11 @@ In case you still want all HTTP interfaces to start besides the multiplexer, `--
 For example: if you use `--multiplex --override-zipcodes=90210,55111` it will normally start HTTP interfaces on `127.0.0.1:6077` and `127.0.0.1:6078`. The multiplexer will be started on `127.0.0.1:6079`.
 
 Note: This type of multiplexing makes sense in Emby, since you can add a single tuner at `http://PORT:IP` or `http://PORT:IP/lineup.m3u` and a single EPG at `http://PORT:IP/epg.xml`
+
+## Development
+- Clone this repo
+- Create a virtual env and activate it `python -m venv venv && . ./venv/bin/activate`
+- Install requirements `pip install -r requirements.txt`
+- Install locast2dvr as editable `pip install --editable .`
+
+You should now be able to develope and test your changes by running `$ locast2dvr`
