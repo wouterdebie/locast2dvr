@@ -5,11 +5,11 @@ from datetime import datetime
 
 from flask import Flask, Response, jsonify, redirect, request
 from flask.templating import render_template
-from locast2dvr.locast import Service
+from locast2dvr.locast import LocastService
 from locast2dvr.utils import Configuration
 
 
-def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service) -> Flask:
+def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: LocastService) -> Flask:
     """Create a Flask app that is used to interface with PMS and acts like a DVR device
 
     Args:
@@ -21,8 +21,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
     Returns:
         Flask: A Flask app that can interface with PMS and mimics a DVR device
     """
-    logging.info(
-        f"Creating Plex Flask App with uid {uid}")
+    log = logging.getLogger("HTTPInterface")
     app = Flask(__name__)
 
     # Preload the stations. The locast determines what DMA is used
@@ -249,7 +248,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         Returns:
             Response: Redirect to a locast m3u
         """
-        logging.info(
+        log.info(
             f"Watching channel {channel_id} on {host_and_port} for {locast_service.city}")
         return redirect(locast_service.get_station_stream_uri(channel_id), code=302)
 
@@ -264,7 +263,7 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
         Returns:
             Response: HTTP response with content_type 'video/mpeg; codecs="avc1.4D401E"'
         """
-        logging.info(
+        log.info(
             f"Watching channel {channel_id} on {host_and_port} for {locast_service.city}")
         uri = locast_service.get_station_stream_uri(channel_id)
 
@@ -290,5 +289,4 @@ def FlaskApp(config: Configuration, port: int, uid: str, locast_service: Service
                     break
 
         return Response(_stream(), content_type='video/mpeg; codecs="avc1.4D401E')
-
     return app

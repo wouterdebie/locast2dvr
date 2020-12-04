@@ -3,51 +3,75 @@ import os
 import threading
 
 import waitress
-from .http_interface import FlaskApp
-from .locast import Geo, Service
+
+from .http import HTTPInterface
+from .locast import Geo, LocastService
 from .ssdp import SSDPServer
-from .utils import Configuration
+from .utils import Configuration, LoggingHandler
 
 
-class DVR:
-    def __init__(self, geo: Geo, port: int, uid: str, config: Configuration, ssdp: SSDPServer):
+class DVR(LoggingHandler):
+    def __init__(self, geo: Geo, uid: str, config: Configuration, ssdp: SSDPServer, port: int = None):
         """Representation of a DVR. This class ties a Flask app to a locast.Service
            and starts an HTTP server on the given port. It also registers the DVR on
            using SSDP to make it easy for PMS to find the device.
 
         Args:
             geo (locast.Geo): Geo object containing what content this DVR is representing
-            port (int): TCP port the DVR listens to. Will not listen on TCP when port == 0
             uid (str): Unique identifier of this DVR
             config (Configuration): global application configuration
             ssdp (SSDPServer): SSDP server instance to register at
-            http (bool, optional): Start an HTTP server [defaults to True]
+            port (int, optional): TCP port the DVR listens to. Will not listen on TCP when port == 0
         """
+        super().__init__()
         self.geo = geo
         self.config = config
         self.port = port
         self.uid = uid
         self.ssdp = ssdp
-
-    def start(self):
-        """Start the DVR 'device'
-        """
         try:
-            self.locast_service = Service(self.geo)
+            self.locast_service = LocastService(self.geo)
+            self.log.info(f"{self} created")
+
         except Exception as err:
             logging.error(err)
             os._exit(1)
 
+    @property
+    def city(self):
+        return self.locast_service.city
+
+    @property
+    def zipcode(self):
+        return self.locast_service.zipcode
+
+    @property
+    def dma(self):
+        return self.locast_service.dma
+
+    @property
+    def url(self):
+        if self.port:
+            return f"http://{self.config.bind_address}:{self.port}"
+
+    def start(self):
+        """Start the DVR 'device'"""
+
         # Create a Flask app that handles the interaction with PMS/Emby if we need to. Here
         # we tie the locast.Service to the Flask app.
-        if self.port > 0:
-            logging.info(
-                f"Starting DVR for {self.locast_service.city} at http://{self.config.bind_address}:{self.port}")
+        if self.port:
             start_http(self.config, self.port, self.uid,
                        self.locast_service, self.ssdp)
+            self.log.info(f"{self} HTTP interface started")
+
+    def __repr__(self) -> str:
+        if self.port:
+            return f"DVR(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid}, url: {self.url})"
+        else:
+            return f"DVR(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid})"
 
 
-def start_http(config: Configuration, port: int, uid: str, locast_service: Service, ssdp: SSDPServer):
+def start_http(config: Configuration, port: int, uid: str, locast_service: LocastService, ssdp: SSDPServer):
     """Start the Flask app and serve it
 
     Args:
@@ -59,7 +83,7 @@ def start_http(config: Configuration, port: int, uid: str, locast_service: Servi
     """
 
     # Create a FlaskApp and tie it to the locast_service
-    app = FlaskApp(config, port, uid, locast_service)
+    app = HTTPInterface(config, port, uid, locast_service)
 
     # Insert logging middle ware if we want verbose access logging
     if config.verbose > 0:
@@ -68,7 +92,7 @@ def start_http(config: Configuration, port: int, uid: str, locast_service: Servi
                   '"%(REQUEST_METHOD)s %(REQUEST_URI)s %(HTTP_VERSION)s" '
                   '%(status)s %(bytes)s "%(HTTP_REFERER)s" "%(HTTP_USER_AGENT)s"')
         app = TransLogger(
-            app, logger=logging.getLogger(), format=format)
+            app, logger=logging.getLogger("HTTPInterface"), format=format)
 
     # Start the Flask app on a separate thread
     threading.Thread(target=waitress.serve, args=(app,),
@@ -82,7 +106,7 @@ def start_http(config: Configuration, port: int, uid: str, locast_service: Servi
                   'upnp:rootdevice', f'http://{config.bind_address}:{port}/device.xml')
 
 
-class Multiplexer:
+class Multiplexer(LoggingHandler):
     def __init__(self, port: int, config: Configuration, ssdp: SSDPServer):
         """Object that behaves like a `locast.Service`, but multiplexes multiple DVRs
 
@@ -90,28 +114,32 @@ class Multiplexer:
             port (int): TCP port to bind to
             config (Configuration): global configuration object
         """
+        super().__init__()
         self.port = port
         self.config = config
         self.dvrs = []
         self.city = "Multiplexer"
         self.uid = f"{config.uid}_MULTI"
         self.ssdp = ssdp
+        self.url = f"http://{self.config.bind_address}:{self.port}"
 
     def start(self):
         """Start the multiplexer. This will start a Flask app.
         """
-        logging.info(
-            f"Starting Multiplexer at http://{self.config.bind_address}:{self.port}")
-        start_http(self.config, self.port, self.uid, self, self.ssdp)
 
-    def register(self, dvr: DVR):
-        """Register a DVR to multiplex
+        start_http(self.config, self.port, self.uid, self, self.ssdp)
+        self.log.info(
+            f"Started at {self.url}")
+
+    def register(self, dvrs: DVR):
+        """Register DVRs to multiplexer
 
         Args:
-            dvr (DVR): a DVR
+            dvrs ([DVR]): List of DVRs
         """
-        logging.info(f"Registering {dvr} with Mutiplexer")
-        self.dvrs.append(dvr)
+        for dvr in dvrs:
+            self.log.info(f"Registering {dvr}")
+            self.dvrs.append(dvr)
 
     def get_stations(self) -> list:
         """Get all stations for all registered DVRs
@@ -119,7 +147,7 @@ class Multiplexer:
         Returns:
             list: A list with all station information
         """
-        logging.info(f"Multiplexer: getting all station")
+        self.log.info(f"Getting all station")
         self.station_service_mapping = {}
         stations = []
 
@@ -129,7 +157,8 @@ class Multiplexer:
                 self.station_service_mapping[str(
                     station['id'])] = d.locast_service
 
-        logging.info(f"Multiplexer: {len(stations)} individual stations")
+        self.log.info(
+            f"Got {len(stations)} stations from {len(self.dvrs)} DVRs")
 
         return stations
 

@@ -1,10 +1,13 @@
-import requests
 import logging
 import re
-import m3u8
 from datetime import datetime
-from .fcc import Facilities
 from typing import Optional, Tuple
+
+import m3u8
+import requests
+from locast2dvr.utils import LoggingHandler
+
+from .fcc import Facilities
 
 LOGIN_URL = "https://api.locastnet.org/api/user/login"
 USER_URL = "https://api.locastnet.org/api/user/me"
@@ -27,6 +30,14 @@ class Geo:
         self.zipcode = zipcode
         self.latlon = latlon
 
+    def __repr__(self) -> str:
+        if self.zipcode:
+            return f"Geo(zipcode: {self.zipcode})"
+        elif self.latlon:
+            return f"Geo(latlon: {self.latlon})"
+        else:
+            return f"Geo(None)"
+
 
 class LocationInvalidError(Exception):
     pass
@@ -36,9 +47,10 @@ class UserInvalidError(Exception):
     pass
 
 
-class Service:
+class LocastService(LoggingHandler):
     _logged_in = False
     _fcc_facilities = Facilities()
+    log = logging.getLogger("LocastService")
 
     def __init__(self, geo: Geo):
         """Locast service interface based on a specific location
@@ -46,6 +58,7 @@ class Service:
         Args:
             geo (Geo): Location information
         """
+        super().__init__()
         self.latlon = geo.latlon
         self.zipcode = geo.zipcode
 
@@ -76,7 +89,7 @@ class Service:
         if password:
             cls.password = password
 
-        logging.info(f"Locast logging in with {cls.username}")
+        cls.log.info(f"Logging in with {cls.username}")
         try:
             r = requests.post(LOGIN_URL,
                               json={
@@ -94,7 +107,7 @@ class Service:
 
         cls._validate_user()
 
-        logging.info("Locast login successful")
+        cls.log.info("Locast login successful")
 
     @classmethod
     def _validate_user(cls) -> bool:
@@ -110,7 +123,6 @@ class Service:
         r.raise_for_status()
 
         user_info = r.json()
-        logging.debug(user_info)
 
         if user_info['didDonate'] and datetime.now() > datetime.fromtimestamp(user_info['donationExpire'] / 1000):
             raise UserInvalidError("Donation expired")
@@ -130,7 +142,7 @@ class Service:
            obtain a new token
         """
         if not self._is_token_valid():
-            logging.info("Token expired, logging in again...")
+            self.log.info("Login token expired!")
             self.login()
 
     def _load_location_data(self):
@@ -154,9 +166,6 @@ class Service:
             self._set_attrs_from_geo(f'{DMA_URL}/zip/{self.zipcode}')
         else:
             self._set_attrs_from_geo(IP_URL)
-
-        logging.info(
-            f'Location: {self.city}, dma: {self.dma}, zip: {self.zipcode}')
 
     def _set_attrs_from_geo(self, url: str):
         """Set location data (lat, long, dma and city) based on the url that is passed in
@@ -182,7 +191,6 @@ class Service:
         self.dma = int(geo['DMA'])
         self.active = geo['active']
         self.city = geo['name']
-        logging.debug(geo)
 
     def get_stations(self) -> list:
         """Get all station information and return in such a way that PMS can use it
@@ -293,5 +301,4 @@ class Service:
         best_resolution = sorted(m3u8_data.playlists,
                                  key=lambda pl: pl.stream_info.resolution).pop()
 
-        logging.debug(f'Resolution: {best_resolution}')
         return best_resolution.absolute_uri

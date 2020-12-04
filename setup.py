@@ -7,7 +7,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
 
 setup(
     name='locast2dvr',
-    version='0.4.4',
+    version='0.4.5',
     description='locast to Plex Media Server/Emby integration',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -33,7 +33,8 @@ setup(
         'm3u8~=0.7.0',
         'requests~=2.24.0',
         'waitress~=1.4.0',
-        'Paste~=3.5.0'
+        'Paste~=3.5.0',
+        'tabulate~=0.8.0'
     ],
     entry_points='''
         [console_scripts]

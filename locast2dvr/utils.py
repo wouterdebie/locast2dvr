@@ -1,3 +1,6 @@
+import logging
+
+
 class Configuration(dict):
     def __getattr__(self, name):
         if name in self:
@@ -13,3 +16,8 @@ class Configuration(dict):
             del self[name]
         else:
             raise AttributeError("No such attribute: " + name)
+
+
+class LoggingHandler:
+    def __init__(self, *args, **kwargs):
+        self.log = logging.getLogger(self.__class__.__name__)

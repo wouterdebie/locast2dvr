@@ -1,21 +1,24 @@
-import requests
-import logging
-import io
-import zipfile
 import datetime
-from fuzzywuzzy import fuzz
+import io
 import os
+import zipfile
 from pathlib import Path
+
+import requests
+from fuzzywuzzy import fuzz
+from locast2dvr.utils import LoggingHandler
 
 FACILITIES_URL = 'https://transition.fcc.gov/ftp/Bureaus/MB/Databases/cdbs/facility.zip'
 DMA_URL = 'http://api.locastnet.org/api/dma'
 
-class Facilities:
+
+class Facilities(LoggingHandler):
     def __init__(self):
         """Provides an interface to FCC 'facilities' that contain information on US TV channels
            TODO: This class can be optimized a lot. The current implementation uses an O(n2)
                  algorithm to do lookups because of the way the data is loaded.
         """
+        super().__init__()
         self._facilities = []
         self._fcc_dmas = set()
         self._dma_mapping = {}
@@ -55,11 +58,11 @@ class Facilities:
             os.makedirs(cache_dir)
 
         if os.path.exists(cache_file):
-            logging.info(f"Using cached facilities file: {cache_file}")
+            self.log.info(f"Using cached file: {cache_file}")
             with open(cache_file, 'rb') as file:
                 data = file.read()
         else:
-            logging.info("Downloading FCC facilities..")
+            self.log.info("Downloading FCC facilities..")
             # Disabling weak dh check. FCC should update their servers.
             ciphers = requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS
             requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
@@ -67,9 +70,10 @@ class Facilities:
             requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS = ciphers
             r.raise_for_status()
             data = r.content
-            logging.info("Caching facilities...")
+
             with open(cache_file, "wb") as file:
                 file.write(data)
+            self.log.info(f"Cached facilities at {cache_file}")
         return data
 
     def _unzip(self, data: bytes) -> str:
@@ -82,7 +86,7 @@ class Facilities:
             str: Decoded bytes as a utf-8 string
         """
 
-        logging.info("Unzipping FCC facilities...")
+        self.log.info("Unzipping facilities...")
         z = zipfile.ZipFile(io.BytesIO(data))
         return z.read('facility.dat').decode('utf-8')
 

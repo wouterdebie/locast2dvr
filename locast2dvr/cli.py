@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-import distutils.spawn
+
 import logging
-import sys
-import threading
 
 import click
 import click_config_file
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
-from .ssdp import SSDPServer
 from .utils import Configuration
+
+logger = logging.getLogger("CLI")
 
 
 @click.command(context_settings=dict(
@@ -38,65 +37,12 @@ from .utils import Configuration
 @click_config_file.configuration_option()
 def cli(*args, **config):
     """Locast to DVR (like Plex or Emby) integration server"""
-    c = Configuration(config)
+    config = Configuration(config)
+    log_level = logging.DEBUG if config.verbose >= 2 else logging.INFO
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s: %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S', level=log_level)
 
-    log_level = logging.DEBUG if c.verbose >= 2 else logging.INFO
-
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p', level=log_level)
-
-    # Test if we have a valid ffmpeg executable
-    c.ffmpeg = distutils.spawn.find_executable(c.ffmpeg or 'ffmpeg')
-    if c.ffmpeg:
-        logging.info(f'Using ffmpeg at {c.ffmpeg}')
-    else:
-        logging.error('ffmpeg not found')
-        sys.exit(1)
-
-    from .dvr import DVR, Multiplexer
-    from .locast import Geo, Service
-
-    # Login to locast.org. We only have to do this once
-    try:
-        Service.login(c.username, c.password)
-    except Exception as err:
-        logging.error(err)
-        sys.exit(1)
-
-    # Create Geo objects based on configuration.
-    if c.override_location:
-        (lat, lon) = c.override_location.split(",")
-        geos = [Geo(latlon={
-            'latitude': lat,
-            'longitude': lon
-        })]
-    elif c.override_zipcodes:
-        geos = [Geo(z.strip()) for z in c.override_zipcodes.split(',')]
-    else:
-        geos = [Geo()]  # No location information means current location
-
-    ssdp = SSDPServer()
-    threading.Thread(target=ssdp.run).start()
-
-    if c.multiplex and c.multiplex_debug:
-        multiplexer = Multiplexer(c.port + len(geos), c, ssdp)
-    elif c.multiplex:
-        multiplexer = Multiplexer(c.port, c, ssdp)
-    else:
-        multiplexer = None
-
-    # Start as many DVR instances as there are geos.
-    for i, geo in enumerate(geos):
-        uid = f"{c.uid}_{i}"
-        port = c.port + i
-        if multiplexer:
-            port = port if c.multiplex_debug else 0
-            dvr = DVR(geo, port, uid, c, ssdp)
-            multiplexer.register(dvr)
-        else:
-            dvr = DVR(geo, port, uid, c, ssdp)
-        dvr.start()
-
-    # Start the multiplexer
-    if multiplexer:
-        multiplexer.start()
+    # We only import main after the configuration is valid and logging is set,
+    # since loading Main will load a bunch of other stuff
+    from .main import Main
+    Main(config).start()

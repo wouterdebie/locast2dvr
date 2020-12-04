@@ -1,2 +1,2 @@
-from .service import Service
+from .service import LocastService
 from .service import Geo

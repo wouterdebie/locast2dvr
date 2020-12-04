@@ -45,3 +45,4 @@ urllib3==1.25.10
 waitress==1.4.4
 webencodings==0.5.1
 Werkzeug==1.0.1
+tabulate==0.8.7
