@@ -10,7 +10,7 @@ I rewrote locast2plex to be able to more easily add functionality, use libraries
 
 ## Features
 - Override your location using zipcode or GPS coordinates
-- Multiple DVR tuners in a single server, either as separate servers or as one (multi-/megaplexing)
+- Multiple DVR tuners in a single server, either as separate servers or as one (multiplexing)
 - SSDP for easy discovery of DVR devices in PMS or Emby
 - Acts like either a HDHomerun Tuner or m3u tuner
 - Provides locast EPG information as an XMLTV guide
@@ -67,7 +67,7 @@ By default `locast2dvr` uses your IP address to determine your location, but it 
 
 ### <a name="multi_region"></a>Multi regions
 
-`locast2dvr` allows starting multiple instances. This is done using the `override-zipcodes` option. A [file with all available locast regions](https://github.com/wouterdebie/`locast2dvr`/blob/main/regions) is included in the `locast2dvr` distribution.
+`locast2dvr` allows starting multiple instances. This is done using the `override-zipcodes` option. A [file with all available locast regions](https://github.com/wouterdebie/locast2dvr/blob/main/regions) is included in the `locast2dvr` distribution.
 
 When using multiple regions, `locast2dvr` will start multiple instances on TCP ports starting at the value that is specified with the `port` (or the default `6077`) argument and incremented by one. Also, the UUID of each device will be appended with `_x`, where `x` is incremented by one for each instance.
 
@@ -97,13 +97,13 @@ For example: if you use `--multiplex --override-zipcodes=90210,55111` it will no
 Note: This type of multiplexing makes sense in Emby, since you can add a single tuner at `http://PORT:IP` or `http://PORT:IP/lineup.m3u` and a single EPG at `http://PORT:IP/epg.xml`
 
 ## Running locast as a service
-With the lack of Linux distro or MacOS packaging, [this wrapper script](https://github.com/wouterdebie/`locast2dvr`/blob/main/tools/locast2dvr_wrapper.sh) can be used to start `locast2dvr` as a service using `systemd`.
+With the lack of Linux distro or MacOS packaging, [this wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) can be used to start `locast2dvr` as a service using `systemd`.
 
 Poor man's daemon:
-- Copy the [wrapper script](https://github.com/wouterdebie/`locast2dvr`/blob/main/tools/locast2dvr_wrapper.sh) to where ever you want locast to reside (e.g. `/home/myuser/bin/locast2dvr/locast2dvr_wrapper.sh`)
+- Copy the [wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) to where ever you want locast to reside (e.g. `/home/myuser/bin/locast2dvr/locast2dvr_wrapper.sh`)
 - Make it executable (`chmod +x /home/myuser/bin/locast2dvr/locast2dvr_wrapper.sh`)
 - Create a config file (e.g. `/home/myuser/.locast2dvr/config`)
-- Copy [locast2dvr.service](https://github.com/wouterdebie/`locast2dvr`/blob/main/tools/locast2dvr.service) to `/home/myuser/.config/systemd/user/locast2dvr.service`
+- Copy [locast2dvr.service](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr.service) to `/home/myuser/.config/systemd/user/locast2dvr.service`
 - Run `systemctl --user start locast2dvr.service` to start the service
 - Check `/var/log/syslog` if `locast2dvr` is running.
 
