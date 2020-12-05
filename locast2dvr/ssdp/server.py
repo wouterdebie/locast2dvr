@@ -99,7 +99,7 @@ class SSDPServer(LoggingHandler):
             # SSDP presence
             self.log.debug('NOTIFY *')
         else:
-            self.log.warning('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
+            self.log.debug('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
 
     def register(self, manifestation, usn, st, location, server=SERVER_ID, cache_control='max-age=1800', silent=False,
                  host=None):
