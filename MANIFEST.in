@@ -1,1 +1,1 @@
-include locast2dvr/http_interface/templates/*
+include locast2dvr/http/templates/*
