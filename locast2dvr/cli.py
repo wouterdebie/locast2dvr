@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
+import sys
 
 import click
 import click_config_file
@@ -39,8 +40,12 @@ def cli(*args, **config):
     """Locast to DVR (like Plex or Emby) integration server"""
     config = Configuration(config)
     log_level = logging.DEBUG if config.verbose >= 2 else logging.INFO
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s: %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S', level=log_level)
+    if sys.stdout.isatty():
+        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S', level=log_level)
+    else:
+        logging.basicConfig(format='%(levelname)s - %(name)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S', level=log_level)
 
     # We only import main after the configuration is valid and logging is set,
     # since loading Main will load a bunch of other stuff
