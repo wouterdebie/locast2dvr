@@ -109,6 +109,8 @@ Poor man's daemon:
 
 Note that the wrapper script will create a python `venv` and install `locast2dvr` in that virtual environment if the `venv` does not exist.
 
+In order to enable `locast2dvr` at startup, run `systemctl --user enable locast2dvr.service`
+
 ## Development
 - Clone this repo
 - Create a virtual env and activate it `python -m venv venv && . ./venv/bin/activate`
