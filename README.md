@@ -96,6 +96,19 @@ For example: if you use `--multiplex --override-zipcodes=90210,55111` it will no
 
 Note: This type of multiplexing makes sense in Emby, since you can add a single tuner at `http://PORT:IP` or `http://PORT:IP/lineup.m3u` and a single EPG at `http://PORT:IP/epg.xml`
 
+## Running locast as a service
+With the lack of Linux distro or MacOS packaging, [this wrapper script](https://github.com/wouterdebie/`locast2dvr`/blob/main/tools/locast2dvr_wrapper.sh) can be used to start `locast2dvr` as a service using `systemd`.
+
+Poor man's daemon:
+- Copy the [wrapper script](https://github.com/wouterdebie/`locast2dvr`/blob/main/tools/locast2dvr_wrapper.sh) to where ever you want locast to reside (e.g. `/home/myuser/bin/locast2dvr/locast2dvr_wrapper.sh`)
+- Make it executable (`chmod +x /home/myuser/bin/locast2dvr/locast2dvr_wrapper.sh`)
+- Create a config file (e.g. `/home/myuser/.locast2dvr/config`)
+- Copy [locast2dvr.service](https://github.com/wouterdebie/`locast2dvr`/blob/main/tools/locast2dvr.service) to `/home/myuser/.config/systemd/user/locast2dvr.service`
+- Run `systemctl --user start locast2dvr.service` to start the service
+- Check `/var/log/syslog` if `locast2dvr` is running.
+
+Note that the wrapper script will create a python `venv` and install `locast2dvr` in that virtual environment if the `venv` does not exist.
+
 ## Development
 - Clone this repo
 - Create a virtual env and activate it `python -m venv venv && . ./venv/bin/activate`
