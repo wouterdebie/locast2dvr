@@ -30,7 +30,7 @@ class DVR(LoggingHandler):
         self.uid = uid
         self.ssdp = ssdp
         try:
-            self.locast_service = LocastService(self.geo)
+            self.locast_service = LocastService(self.geo, self.config)
             self.log.info(f"{self} created")
 
         except Exception as err:
@@ -144,10 +144,15 @@ class Multiplexer(LoggingHandler):
     def get_stations(self) -> list:
         """Get all stations for all registered DVRs
 
+        Args:
+            use_cache (bool, optional): Cache the stations for `cache_time` seconds. Defaults to True.
+            cache_time (str, optional): Seconds before cache is evicted. Defaults to 3600.
+
         Returns:
             list: A list with all station information
         """
-        self.log.info(f"Getting all station")
+        self.log.info(
+            f"Loading all stations..")
         self.station_service_mapping = {}
         stations = []
 

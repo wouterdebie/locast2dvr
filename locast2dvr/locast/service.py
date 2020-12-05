@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 
 import m3u8
 import requests
-from locast2dvr.utils import LoggingHandler
+from locast2dvr.utils import Configuration, LoggingHandler
 
 from .fcc import Facilities
 
@@ -52,20 +52,26 @@ class LocastService(LoggingHandler):
     _fcc_facilities = Facilities()
     log = logging.getLogger("LocastService")
 
-    def __init__(self, geo: Geo):
+    def __init__(self, geo: Geo, config: Configuration):
         """Locast service interface based on a specific location
 
         Args:
             geo (Geo): Location information
+            config (Configuration): Global configuration
         """
         super().__init__()
         self.latlon = geo.latlon
         self.zipcode = geo.zipcode
 
+        self.config = config
+
         self.location = None
         self.active = False
         self.dma = None
         self.city = None
+
+        self._last_cache_ts = 0
+        self._stations = []
 
         self._load_location_data()
 
@@ -206,13 +212,24 @@ class LocastService(LoggingHandler):
         Lastly, if we can't find a channel number, we just make something up, but this should rarely
         happen.
 
+        Args:
+            use_cache (bool, optional): Cache the stations for `cache_time` seconds. Defaults to True.
+            cache_time (str, optional): Seconds before cache is evicted. Defaults to 3600.
+
         Returns:
             list: stations
         """
-        locast_stations = self._get_locast_stations()
+
+        now = int(datetime.utcnow().timestamp())
+        if self.config.cache_stations and now - self._last_cache_ts < self.config.cache_timeout and self._stations:
+            return self._stations
+
+        self.log.info(
+            f"Loading stations for {self.city} (cache: {self.config.cache_stations}, time: {self.config.cache_timeout})")
+        stations = self._get_locast_stations()
 
         fake_channel = 1000
-        for station in locast_stations:
+        for station in stations:
             station['city'] = self.city
             # See if station conforms to "X.Y Name"
             m = re.match(r'(\d+\.\d+) .+', station['callSign'])
@@ -242,7 +259,11 @@ class LocastService(LoggingHandler):
             station['channel'] = str(fake_channel)
             fake_channel += 1
 
-        return locast_stations
+        if self.config.cache_stations:
+            self._last_cache_ts = int(datetime.utcnow().timestamp())
+            self._stations = stations
+
+        return stations
 
     def _get_locast_stations(self) -> list:
         """Get all the stations from locast for the current DMA

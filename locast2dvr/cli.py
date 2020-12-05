@@ -35,6 +35,8 @@ logger = logging.getLogger("CLI")
 @optgroup.option('--device-model', default='HDHR3-US', show_default=True, help='HDHomerun device model reported to clients')
 @optgroup.option('--device-firmware', default='hdhomerun3_atsc', show_default=True, help='Model firmware reported to clients')
 @optgroup.option('--device-version', default='1.2.3456', show_default=True, help='Model version reported to clients')
+@optgroup.option('--cache-stations', default=True, is_flag=True, show_default=True, help='Cache station data')
+@optgroup.option('--cache-timeout', default=3600, show_default=True, help='Time to cache station data in seconds')
 @click_config_file.configuration_option()
 def cli(*args, **config):
     """Locast to DVR (like Plex or Emby) integration server"""
