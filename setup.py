@@ -34,7 +34,8 @@ setup(
         'requests~=2.24.0',
         'waitress~=1.4.0',
         'Paste~=3.5.0',
-        'tabulate~=0.8.0'
+        'tabulate~=0.8.0',
+        'python-Levenshtein~=0.12.0'
     ],
     entry_points='''
         [console_scripts]
