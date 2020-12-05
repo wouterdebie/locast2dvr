@@ -198,6 +198,14 @@ class LocastService(LoggingHandler):
         This is done by getting station information from locast.org and and where necessary
         complement channel numbers this with data from the FCC.
 
+        Some locast stations already have the channel number (like 4.1 CBS) as part of the call sign,
+        while others don't (like KUSDDT2). In this case we first split the call sign (KUSD) from the
+        sub channel number (2) and lookup the channel number using the FCC facilities.
+        FCC call signs can be in either the 'name' or 'callSign' property of a Locast station.
+
+        Lastly, if we can't find a channel number, we just make something up, but this should rarely
+        happen.
+
         Returns:
             list: stations
         """
@@ -215,8 +223,8 @@ class LocastService(LoggingHandler):
             # Check if we can use the callSign or name to figure out the channel number
             # This is done by first detecting the call sign, station type and subchannel
             # and looking the channel number up from the FCC facilities
-            result = (self._detect_callsign(station['callSign']) or
-                      self._detect_callsign(station['name']))
+            result = (self._detect_callsign(station['name']) or
+                      self._detect_callsign(station['callSign']))
             if result:  # name or callSign match to a valid call sign
                 (call_sign, subchannel) = result
 
@@ -228,7 +236,9 @@ class LocastService(LoggingHandler):
                         'analog'] else f'{fcc_station["channel"]}.{subchannel or 1}'
                     continue  # Done with this sation
 
-            # Can't find the channel number, so we make something up
+            # Can't find the channel number, so we make something up - This shouldn't really happen
+            self.log.warn(
+                f"Channel (name: {station['name']}, callSign: {station['callSign']}) not found. Assigning {fake_channel}")
             station['channel'] = str(fake_channel)
             fake_channel += 1
 

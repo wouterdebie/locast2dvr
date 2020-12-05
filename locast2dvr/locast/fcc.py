@@ -19,7 +19,7 @@ class Facilities(LoggingHandler):
                  algorithm to do lookups because of the way the data is loaded.
         """
         super().__init__()
-        self._facilities = []
+        self._facilities_index = {}
         self._fcc_dmas = set()
         self._dma_mapping = {}
 
@@ -36,13 +36,14 @@ class Facilities(LoggingHandler):
         Returns:
             dict: Returns a dict containing the channel name and if the channel is analog or not
         """
-        for facility in self._facilities:
-            if facility['nielsen_dma'] == self._dma_mapping[dma] and \
-               facility['fac_callsign'].split("-")[0] == call_sign:
-                return {
-                    "channel": facility['tv_virtual_channel'] or facility['fac_channel'],
-                    "analog": facility['tv_virtual_channel'] == None
-                }
+
+        facility = self._facilities_index.get(
+            (self._dma_mapping[dma], call_sign))
+        if facility:
+            return {
+                "channel": facility['tv_virtual_channel'] or facility['fac_channel'],
+                "analog": facility['tv_virtual_channel'] == None
+            }
 
     def _download(self) -> bytes:
         """Download facilities zipfile from the FCC. This function also caches the facilities
@@ -126,8 +127,11 @@ class Facilities(LoggingHandler):
                     facility["lic_expiration_date"], '%m/%d/%Y') + \
                     datetime.timedelta(hours=23, minutes=59, seconds=59)
 
+                # Add the facility to the index, keyed by nielsen_dma and fac_callsign
                 if lic_expiration_date > datetime.datetime.now():
-                    self._facilities.append(facility)
+                    nielsen_dma = facility['nielsen_dma']
+                    fac = facility['fac_callsign'].split("-")[0]
+                    self._facilities_index[(nielsen_dma, fac)] = facility
 
                 if facility['nielsen_dma']:
                     self._fcc_dmas.add(facility['nielsen_dma'])
