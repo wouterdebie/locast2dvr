@@ -1,3 +1,0 @@
-#!/bin/bash
-bump2version --list --commit --tag patch setup.py
-

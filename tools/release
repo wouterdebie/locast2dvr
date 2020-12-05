@@ -1,0 +1,6 @@
+#!/bin/bash
+bump2version --list --commit --tag patch setup.py && \
+git push && git push --tags && \
+rm -rf dist build  && python setup.py sdist bdist_wheel && python -m twine upload dist/*
+
+
