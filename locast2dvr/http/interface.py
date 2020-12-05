@@ -8,6 +8,8 @@ from flask.templating import render_template
 from locast2dvr.locast import LocastService
 from locast2dvr.utils import Configuration
 
+import functools
+
 
 def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: LocastService) -> Flask:
     """Create a Flask app that is used to interface with PMS and acts like a DVR device
@@ -24,8 +26,8 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
     log = logging.getLogger("HTTPInterface")
     app = Flask(__name__)
 
-    # Preload the stations. The locast determines what DMA is used
-    stations = locast_service.get_stations()
+    # Preload the stations.
+    locast_service.get_stations()
     station_scan = False
 
     host_and_port = f'{config.bind_address}:{port}'
@@ -104,7 +106,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
                 f'tvg-chno="{station["channel"]}" '
                 '\n'
                 f"http://{host_and_port}/watch/{station['id']}.m3u\n"
-            ) for station in stations]
+            ) for station in locast_service.get_stations()]
         )
 
     @app.template_filter()
@@ -134,7 +136,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             "GuideNumber": station['channel'],
             "GuideName": station['name'],
             "URL": f"http://{host_and_port}/watch/{station['id']}"
-        } for station in stations])
+        } for station in locast_service.get_stations()])
 
     @app.route('/epg', methods=['GET'])
     def epg() -> Response:
@@ -143,8 +145,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             Response: JSON containing the EPG for this DMA
         """
-        stations = locast_service.get_stations()
-        return jsonify(stations)
+        return jsonify(locast_service.get_stations())
 
     @app.template_filter()
     def format_date(value: str) -> str:
@@ -207,10 +208,8 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             Response: XMLTV
         """
-        stations = locast_service.get_stations()
-
         xml = render_template('epg.xml',
-                              stations=stations,
+                              stations=locast_service.get_stations(),
                               url_base=host_and_port)
         return Response(xml, mimetype='text/xml')
 
@@ -222,7 +221,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             Response: XML containing the GuideNumber, GuideName and URL for each channel
         """
         xml = render_template('lineup.xml',
-                              stations=stations,
+                              stations=locast_service.get_stations(),
                               url_base=host_and_port).encode("utf-8")
         return Response(xml, mimetype='text/xml')
 
