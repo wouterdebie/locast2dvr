@@ -41,6 +41,8 @@ class Main(LoggingHandler):
         elif self.config.multiplex:
             self.multiplexer = Multiplexer(
                 self.config.port, self.config, self.ssdp)
+        else:
+            self.multiplexer = None
 
     def _init_dvrs(self):
         dvrs = []
