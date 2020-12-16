@@ -19,7 +19,7 @@ install_requires = [
     'tabulate~=0.8.0'
 ]
 
-if not os.name == 'nt':
+if os.name != 'nt':
     install_requires.append('python-Levenshtein~=0.12.0')
 
 setup(
