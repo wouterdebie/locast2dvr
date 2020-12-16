@@ -19,8 +19,8 @@ install_requires = [
     'tabulate~=0.8.0'
 ]
 
-if not sys.platform.startswith("win"):
-    install_requires += ['python-Levenshtein~=0.12.0', 'wheel']
+# if not sys.platform.startswith("win"):
+#     install_requires += ['python-Levenshtein~=0.12.0', 'wheel']
 
 setup(
     name='locast2dvr',
