@@ -157,7 +157,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             str: String as YYYYmmdd
         """
-        return datetime.utcfromtimestamp(value/1000).strftime('%Y%m%d')
+        return datetime.utcfromtimestamp(int(value)/1000).strftime('%Y%m%d')
 
     @app.template_filter()
     def format_time(value: str) -> str:
@@ -169,7 +169,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             str: String as YYYYmmdddHHMMSS
         """
-        return datetime.utcfromtimestamp(value/1000).strftime('%Y%m%d%H%M%S')
+        return datetime.utcfromtimestamp(int(value)/1000).strftime('%Y%m%d%H%M%S')
 
     @app.template_filter()
     def aspect(value: str) -> str:
