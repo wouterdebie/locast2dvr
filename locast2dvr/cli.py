@@ -2,7 +2,6 @@
 
 import logging
 import sys
-import signal
 
 import click
 import click_config_file
@@ -11,14 +10,6 @@ from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 from .utils import Configuration
 
 logger = logging.getLogger("CLI")
-
-
-def signal_handler(sig, frame):
-    sys.exit(0)
-
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
 
 
 @click.command(context_settings=dict(
