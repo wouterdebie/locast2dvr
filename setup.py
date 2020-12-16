@@ -1,9 +1,26 @@
 from os import path
+import os
 
 from setuptools import setup, setuptools
 
 with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+
+install_requires = [
+    'click~=7.1.0',
+    'click-config-file~=0.6.0',
+    'click-option-group~=0.5.0',
+    'Flask~=1.1.0',
+    'fuzzywuzzy~=0.18.0',
+    'm3u8~=0.7.0',
+    'requests~=2.24.0',
+    'waitress~=1.4.0',
+    'Paste~=3.5.0',
+    'tabulate~=0.8.0'
+]
+
+if not os.name == 'nt':
+    install_requires.append('python-Levenshtein~=0.12.0')
 
 setup(
     name='locast2dvr',
@@ -24,19 +41,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
     ],
-    install_requires=[
-        'click~=7.1.0',
-        'click-config-file~=0.6.0',
-        'click-option-group~=0.5.0',
-        'Flask~=1.1.0',
-        'fuzzywuzzy~=0.18.0',
-        'm3u8~=0.7.0',
-        'requests~=2.24.0',
-        'waitress~=1.4.0',
-        'Paste~=3.5.0',
-        'tabulate~=0.8.0',
-        'python-Levenshtein~=0.12.0'
-    ],
+    install_requires=install_requires,
     entry_points='''
         [console_scripts]
         locast2dvr=locast2dvr:cli

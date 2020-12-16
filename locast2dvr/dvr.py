@@ -60,8 +60,8 @@ class DVR(LoggingHandler):
         # Create a Flask app that handles the interaction with PMS/Emby if we need to. Here
         # we tie the locast.Service to the Flask app.
         if self.port:
-            start_http(self.config, self.port, self.uid,
-                       self.locast_service, self.ssdp)
+            _start_http(self.config, self.port, self.uid,
+                        self.locast_service, self.ssdp)
             self.log.info(f"{self} HTTP interface started")
 
     def __repr__(self) -> str:
@@ -71,7 +71,7 @@ class DVR(LoggingHandler):
             return f"DVR(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid})"
 
 
-def start_http(config: Configuration, port: int, uid: str, locast_service: LocastService, ssdp: SSDPServer):
+def _start_http(config: Configuration, port: int, uid: str, locast_service: LocastService, ssdp: SSDPServer):
     """Start the Flask app and serve it
 
     Args:
@@ -127,7 +127,7 @@ class Multiplexer(LoggingHandler):
         """Start the multiplexer. This will start a Flask app.
         """
 
-        start_http(self.config, self.port, self.uid, self, self.ssdp)
+        _start_http(self.config, self.port, self.uid, self, self.ssdp)
         self.log.info(
             f"Started at {self.url}")
 
