@@ -1,7 +1,7 @@
 import logging
 import re
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Flask, Response, jsonify, redirect, request
 from flask.templating import render_template
@@ -148,7 +148,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         return jsonify(locast_service.get_stations())
 
     @app.template_filter()
-    def format_date(value: str) -> str:
+    def format_date(value: int) -> str:
         """Convert an epoch timestamp to YYYYmmdd
 
         Args:
@@ -157,10 +157,11 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             str: String as YYYYmmdd
         """
-        return datetime.utcfromtimestamp(int(value)/1000).strftime('%Y%m%d')
+
+        return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y%m%d')
 
     @app.template_filter()
-    def format_time(value: str) -> str:
+    def format_time(value: int) -> str:
         """Return an epoch timestamp to YYYYmmdddHHMMSS
 
         Args:
@@ -169,7 +170,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             str: String as YYYYmmdddHHMMSS
         """
-        return datetime.utcfromtimestamp(int(value)/1000).strftime('%Y%m%d%H%M%S')
+        return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y%m%d%H%M%S')
 
     @app.template_filter()
     def aspect(value: str) -> str:
