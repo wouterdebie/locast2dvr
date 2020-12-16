@@ -1,11 +1,16 @@
 import datetime
 import io
 import os
+import warnings
 import zipfile
 from pathlib import Path
 
 import requests
-from fuzzywuzzy import fuzz
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from fuzzywuzzy import fuzz
+
 from locast2dvr.utils import LoggingHandler
 
 FACILITIES_URL = 'https://transition.fcc.gov/ftp/Bureaus/MB/Databases/cdbs/facility.zip'
