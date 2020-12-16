@@ -24,7 +24,7 @@ if not os.name == 'nt':
 
 setup(
     name='locast2dvr',
-    version='0.4.16',
+    version='0.4.17',
     description='locast to Plex Media Server/Emby integration',
     long_description=long_description,
     long_description_content_type="text/markdown",
