@@ -1,5 +1,5 @@
 from os import path
-import os
+import sys
 
 from setuptools import setup, setuptools
 
@@ -19,8 +19,8 @@ install_requires = [
     'tabulate~=0.8.0'
 ]
 
-if os.name != 'nt':
-    install_requires.append('python-Levenshtein~=0.12.0')
+if not sys.platform.startswith("win"):
+    install_requires += ['python-Levenshtein~=0.12.0', 'wheel']
 
 setup(
     name='locast2dvr',
