@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+import chevron
+import subprocess
+
+help = subprocess.check_output(['locast2dvr', '--help'])
+
+with open('README.md.mustache', 'r') as f:
+    with open('README.md', 'w') as o:
+        o.write(chevron.render(f, {'usage': help.decode('utf-8')}))

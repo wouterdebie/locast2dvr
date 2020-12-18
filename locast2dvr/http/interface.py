@@ -92,6 +92,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         return jsonify(lineup_status)
 
     @app.route('/lineup.m3u', methods=['GET'])
+    @app.route('/tuner.m3u', methods=['GET'])
     def m3u() -> Response:
         """Returns all stations in m3u format
 

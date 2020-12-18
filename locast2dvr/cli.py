@@ -14,21 +14,21 @@ logger = logging.getLogger("CLI")
 
 @click.command(context_settings=dict(
     ignore_unknown_options=True,
-    allow_extra_args=True,
+    allow_extra_args=True
 ))
 @click.option('-U', '--username', required=True, type=click.STRING, help='Locast username', metavar='USERNAME')
 @click.password_option('-P', '--password', required=True, help='Locast password', metavar='PASSWORD')
 @click.option('-u', '--uid', type=click.STRING, help='Unique identifier of the device', metavar='UID', default="LOCAST2DVR", show_default=True)
 @click.option('-b', '--bind', 'bind_address', default="127.0.0.1", show_default=True, help='Bind IP address', metavar='IP_ADDR', )
-@click.option('-p', '--port', default=6077, show_default=True, help='Bind tcp port', metavar='PORT')
+@click.option('-p', '--port', default=6077, show_default=True, help='Bind TCP port', metavar='PORT')
 @click.option('-f', '--ffmpeg', help='Path to ffmpeg binary', metavar='PATH', default='ffmpeg', show_default=True)
 @click.option('-v', '--verbose', count=True, help='Enable verbose logging')
 @optgroup.group('\nMultiplexing')
-@optgroup.option('-M', '--multiplex-debug', is_flag=True, help='Multiplex devices AND start individual instances (multiplexer is started on the last port + 1)')
 @optgroup.option('-m', '--multiplex', is_flag=True, help='Multiplex devices')
+@optgroup.option('-M', '--multiplex-debug', is_flag=True, help='Multiplex devices AND start individual instances (multiplexer is started on the last port + 1)')
 @optgroup.group('\nLocation overrides', cls=MutuallyExclusiveOptionGroup)
-@optgroup.option('--override-location', type=str, help='Override location', metavar="LAT,LONG")
-@optgroup.option('--override-zipcodes', type=str, help='Override zipcodes', metavar='ZIP')
+@optgroup.option('-ol', '--override-location', type=str, help='Override location', metavar="LAT,LONG")
+@optgroup.option('-oz', '--override-zipcodes', type=str, help='Override zipcodes', metavar='ZIP')
 @optgroup.group('\nDebug options')
 @optgroup.option('--bytes-per-read', type=int, default=1152000, show_default=True, help='Bytes per read', metavar='BYTES')
 @optgroup.option('--tuner-count', default=3, show_default=True, help='Tuner count', metavar='COUNT')
