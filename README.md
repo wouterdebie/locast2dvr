@@ -25,7 +25,7 @@ $ pip install `locast2dvr`
 ```
 
 ## Usage
-```sh
+```
 Usage: locast2dvr [OPTIONS]
 
   Locast to DVR (like Plex or Emby) integration server
@@ -38,6 +38,9 @@ Options:
 
   -b, --bind IP_ADDR              Bind IP address  [default: 127.0.0.1]
   -p, --port PORT                 Bind TCP port  [default: 6077]
+  -d, --days DAYS                 Amount of days to get EPG data for
+                                  [default: 8]
+
   -f, --ffmpeg PATH               Path to ffmpeg binary  [default: ffmpeg]
   -v, --verbose                   Enable verbose logging
   
