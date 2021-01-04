@@ -2,8 +2,8 @@
 Description=locast2dvr
 
 [Service]
-# Command to execute when the service is started
-ExecStart=/home/user/bin/locast2dvr/locast2dvr_wrapper -c /home/user/.locast2dvr/config
+# Command to execute when the service is started. Make sure the paths below exist and are correct!
+ExecStart=/path/to/locast2dvr_wrapper.sh -c /path/to/locast2dvr/config
 
 [Install]
 WantedBy=default.target

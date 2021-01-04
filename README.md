@@ -123,10 +123,10 @@ Note: This type of multiplexing makes sense in Emby, since you can add a single 
 With the lack of Linux distro or MacOS packaging, [this wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) can be used to start `locast2dvr` as a service using `systemd`.
 
 Poor man's daemon:
-- Copy the [wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) to where ever you want locast to reside (e.g. `/home/myuser/bin/locast2dvr/locast2dvr_wrapper.sh`)
-- Make it executable (`chmod +x /home/myuser/bin/locast2dvr/locast2dvr_wrapper.sh`)
-- Create a config file (e.g. `/home/myuser/.locast2dvr/config`)
-- Copy [locast2dvr.service](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr.service) to `/home/myuser/.config/systemd/user/locast2dvr.service`
+- Copy the [wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) to where ever you want locast to reside (e.g. `$HOME/bin/locast2dvr/locast2dvr_wrapper.sh`)
+- Make it executable (`chmod +x $HOME/bin/locast2dvr/locast2dvr_wrapper.sh`)
+- Create a config file (e.g. `$HOME/.locast2dvr/config`)
+- Copy [locast2dvr.service](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr.service) to `$HOME/.config/systemd/user/locast2dvr.service` and make sure the paths specified in the file are correct.
 - Run `systemctl --user start locast2dvr.service` to start the service
 - Check `/var/log/syslog` if `locast2dvr` is running.
 
