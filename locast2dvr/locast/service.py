@@ -225,7 +225,7 @@ class LocastService(LoggingHandler):
             return self._stations
 
         self.log.info(
-            f"Loading stations for {self.city} (cache: {self.config.cache_stations}, time: {self.config.cache_timeout})")
+            f"Loading stations for {self.city} (cache: {self.config.cache_stations}, cache timeout: {self.config.cache_timeout}, days: {self.config.days})")
         stations = self._get_locast_stations()
 
         fake_channel = 1000
@@ -275,8 +275,8 @@ class LocastService(LoggingHandler):
             HTTPError: if the HTTP request to locast fails
         """
         self._validate_token()
-
-        r = requests.get(f'{STATIONS_URL}/{self.dma}', headers={
+        start_time = datetime.utcnow().strftime("%Y-%m-%dT00:00:00-00:00")
+        r = requests.get(f'{STATIONS_URL}/{self.dma}?startTime={start_time}&hours={self.config.days * 24}', headers={
             'Content-Type': 'application/json',
             'authorization': 'Bearer ' + self.token})
         r.raise_for_status()
