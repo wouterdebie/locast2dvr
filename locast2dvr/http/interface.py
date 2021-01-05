@@ -99,7 +99,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             Response: m3u in text/plain
         """
-        return "\n".join(
+        return "#EXTM3U\n" + "\n".join(
             [(
                 f"#EXTINF:-1, {station['name']} "
                 f'tvg-name="{name_only(station.get("callSign")) or station.get("name")} ({station["city"]})" '
