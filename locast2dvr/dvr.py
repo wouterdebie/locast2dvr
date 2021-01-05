@@ -1,6 +1,8 @@
 import logging
 import os
+import os
 import threading
+import traceback
 
 import waitress
 
@@ -61,7 +63,7 @@ class DVR(LoggingHandler):
         # we tie the locast.Service to the Flask app.
         if self.port:
             _start_http(self.config, self.port, self.uid,
-                        self.locast_service, self.ssdp)
+                        self.locast_service, self.ssdp, self.log)
             self.log.info(f"{self} HTTP interface started")
 
     def __repr__(self) -> str:
@@ -71,7 +73,8 @@ class DVR(LoggingHandler):
             return f"DVR(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid})"
 
 
-def _start_http(config: Configuration, port: int, uid: str, locast_service: LocastService, ssdp: SSDPServer):
+def _start_http(config: Configuration, port: int, uid: str, locast_service: LocastService,
+                ssdp: SSDPServer, log: logging.Logger):
     """Start the Flask app and serve it
 
     Args:
@@ -93,6 +96,15 @@ def _start_http(config: Configuration, port: int, uid: str, locast_service: Loca
                   '%(status)s %(bytes)s "%(HTTP_REFERER)s" "%(HTTP_USER_AGENT)s"')
         app = TransLogger(
             app, logger=logging.getLogger("HTTPInterface"), format=format)
+
+    def my_excepthook(args):
+        if args.exc_type == OSError:
+            log.error(args.exc_value)
+            log.error(traceback.print_tb(args.exc_traceback))
+            os._exit(-1)
+        print('Unhandled error:', )
+
+    threading.excepthook = my_excepthook
 
     # Start the Flask app on a separate thread
     threading.Thread(target=waitress.serve, args=(app,),
