@@ -139,7 +139,8 @@ class Multiplexer(LoggingHandler):
         """Start the multiplexer. This will start a Flask app.
         """
 
-        _start_http(self.config, self.port, self.uid, self, self.ssdp)
+        _start_http(self.config, self.port, self.uid,
+                    self, self.ssdp, self.log)
         self.log.info(
             f"Started at {self.url}")
 
