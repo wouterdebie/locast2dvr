@@ -1,9 +1,8 @@
 import logging
 import re
+import threading
 from datetime import datetime
 from typing import Optional, Tuple
-import threading
-import time
 
 import m3u8
 import requests
