@@ -2,6 +2,8 @@ import logging
 import re
 from datetime import datetime
 from typing import Optional, Tuple
+import threading
+import time
 
 import m3u8
 import requests
@@ -70,10 +72,13 @@ class LocastService(LoggingHandler):
         self.dma = None
         self.city = None
 
-        self._last_cache_ts = 0
-        self._stations = []
-
         self._load_location_data()
+
+        # Start cache updater timer if necessary, otherwise, just preload
+        # stations once
+        if config.cache_stations:
+            self._lock = threading.Lock()
+            self._update_cache()
 
     @classmethod
     def login(cls, username: str = None, password: str = None) -> bool:
@@ -212,18 +217,36 @@ class LocastService(LoggingHandler):
         Lastly, if we can't find a channel number, we just make something up, but this should rarely
         happen.
 
-        Args:
-            use_cache (bool, optional): Cache the stations for `cache_time` seconds. Defaults to True.
-            cache_time (str, optional): Seconds before cache is evicted. Defaults to 3600.
+        Note: if caching is disabled, calling this method will lead to calling locast for channel information
+              (incl EPG data) every time.
 
         Returns:
             list: stations
         """
 
-        now = int(datetime.utcnow().timestamp())
-        if self.config.cache_stations and now - self._last_cache_ts < self.config.cache_timeout and self._stations:
-            return self._stations
+        if self.config.cache_stations:
+            with self._lock:
+                return self._stations
+        else:
+            return self._get_stations()
 
+    def _update_cache(self):
+        """Update the station cache
+
+        After this method is done fetching station information, it will schedule itself to run again after
+        `self.config.cache_timeout` seconds.add()
+        """
+        stations = self._get_stations()
+        with self._lock:
+            self._stations = stations
+        threading.Timer(self.config.cache_timeout, self._update_cache).start()
+
+    def _get_stations(self) -> list:
+        """Actual implementation of retrieving all station information
+
+        Returns:
+            list: stations
+        """
         self.log.info(
             f"Loading stations for {self.city} (cache: {self.config.cache_stations}, cache timeout: {self.config.cache_timeout}, days: {self.config.days})")
         stations = self._get_locast_stations()
@@ -258,10 +281,6 @@ class LocastService(LoggingHandler):
                 f"Channel (name: {station['name']}, callSign: {station['callSign']}) not found. Assigning {fake_channel}")
             station['channel'] = str(fake_channel)
             fake_channel += 1
-
-        if self.config.cache_stations:
-            self._last_cache_ts = int(datetime.utcnow().timestamp())
-            self._stations = stations
 
         return stations
 

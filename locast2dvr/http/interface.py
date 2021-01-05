@@ -26,8 +26,6 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
     log = logging.getLogger("HTTPInterface")
     app = Flask(__name__)
 
-    # Preload the stations.
-    locast_service.get_stations()
     station_scan = False
 
     host_and_port = f'{config.bind_address}:{port}'
