@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import locast2dvr
 import logging
 import sys
 
@@ -52,5 +53,6 @@ def cli(*args, **config):
 
     # We only import main after the configuration is valid and logging is set,
     # since loading Main will load a bunch of other stuff
+    logger.info(f"locast2dvr {locast2dvr.__version__} starting")
     from .main import Main
     Main(config).start()

@@ -21,7 +21,6 @@ install_requires = [
 
 setup(
     name='locast2dvr',
-    version='0.4.34',
     description='locast to Plex Media Server/Emby integration',
     long_description=long_description,
     long_description_content_type="text/markdown",

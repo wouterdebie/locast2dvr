@@ -23,8 +23,6 @@ MAX_FILE_AGE = 24 * 60 * 60
 class Facilities(LoggingHandler):
     def __init__(self):
         """Provides an interface to FCC 'facilities' that contain information on US TV channels
-           TODO: This class can be optimized a lot. The current implementation uses an O(n2)
-                 algorithm to do lookups because of the way the data is loaded.
         """
         super().__init__()
         self._facilities_index = {}
