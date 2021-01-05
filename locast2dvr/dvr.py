@@ -1,6 +1,5 @@
 import logging
 import os
-import os
 import threading
 import traceback
 
@@ -141,6 +140,8 @@ class Multiplexer(LoggingHandler):
 
         _start_http(self.config, self.port, self.uid,
                     self, self.ssdp, self.log)
+        if self.config.remap:
+            self.log.warn("Will remap duplicate channels!")
         self.log.info(
             f"Started at {self.url}")
 
@@ -168,10 +169,15 @@ class Multiplexer(LoggingHandler):
             f"Loading all stations..")
         self.station_service_mapping = {}
         stations = []
+        channels = set()
 
-        for d in self.dvrs:
+        for i, d in enumerate(self.dvrs):
             for station in d.locast_service.get_stations():
                 stations.append(station)
+                if self.config.remap and station['channel'] in channels:
+                    (station['channel'], station['callSign']) = _remap(
+                        station, i)
+                channels.add(station['channel'])
                 self.station_service_mapping[str(
                     station['id'])] = d.locast_service
 
@@ -190,3 +196,14 @@ class Multiplexer(LoggingHandler):
             str: URL
         """
         return self.station_service_mapping[station_id].get_station_stream_uri(station_id)
+
+
+def _remap(station: dict, i: int):
+    """Remaps a channel number to one based on the DVR index
+    """
+    if station['channel'].isdigit():
+        new_channel = str(int(station['channel']) + 100 * i)
+    else:
+        new_channel = str(float(station['channel']) + 100 * i)
+
+    return (new_channel, station['callSign'].replace(station['channel'], new_channel))

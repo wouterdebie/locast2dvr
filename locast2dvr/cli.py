@@ -40,7 +40,7 @@ logger = logging.getLogger("CLI")
 @optgroup.option('--cache-timeout', default=3600, show_default=True, help='Time to cache station data in seconds')
 @optgroup.group('\nMisc options')
 @optgroup.option('-d', '--days', default=8, show_default=True, help='Amount of days to get EPG data for', metavar='DAYS')
-@optgroup.option('-r', '--remap', is_flag=True, help='Remap channel numbers when multiplexing')
+@optgroup.option('-r', '--remap', is_flag=True, help='Remap channel numbers when multiplexing based on DVR index')
 @click_config_file.configuration_option()
 def cli(*args, **config):
     """Locast to DVR (like Plex or Emby) integration server"""
