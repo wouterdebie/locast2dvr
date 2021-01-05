@@ -19,7 +19,7 @@
     {%- if station['id'] -%}
     <display-name lang="en">{{station['id']}}</display-name>
     {%- endif %}
-    <icon src="{{station['logo226Url']}}" />
+    <icon src="{{station.get('logoUrl') or station.get('logo226Url')}}" />
   </channel>
 {%- endfor %}
 {%- for station in stations %}
