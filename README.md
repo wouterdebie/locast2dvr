@@ -36,11 +36,8 @@ Options:
   -u, --uid UID                   Unique identifier of the device  [default:
                                   LOCAST2DVR]
 
-  -b, --bind IP_ADDR              Bind IP address  [default: 127.0.0.1]
+  -b, --bind-address IP_ADDR      Bind IP address  [default: 127.0.0.1]
   -p, --port PORT                 Bind TCP port  [default: 6077]
-  -d, --days DAYS                 Amount of days to get EPG data for
-                                  [default: 8]
-
   -f, --ffmpeg PATH               Path to ffmpeg binary  [default: ffmpeg]
   -v, --verbose                   Enable verbose logging
   
@@ -71,6 +68,14 @@ Debug options:
     --cache-stations              Cache station data  [default: True]
     --cache-timeout INTEGER       Time to cache station data in seconds
                                   [default: 3600]
+
+  
+Misc options: 
+    -d, --days DAYS               Amount of days to get EPG data for
+                                  [default: 8]
+
+    -r, --remap                   Remap channel numbers when multiplexing
+                                  based on DVR index
 
   --config FILE                   Read configuration from FILE.
   --help                          Show this message and exit.
