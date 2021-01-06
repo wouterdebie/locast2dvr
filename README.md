@@ -18,6 +18,7 @@ I rewrote locast2plex to be able to more easily add functionality, use libraries
 ## Prerequisites
 - Active locast.org account with an active donation. Locast doesn't allow you to stream without a donation.
 - Make sure [ffmpeg](https://ffmpeg.org/) is installed and available on your `$PATH`.
+- locast2dvr requires python >= 3.7
 
 ## Install
 ```sh
