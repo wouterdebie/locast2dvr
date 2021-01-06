@@ -180,6 +180,9 @@ class Multiplexer(LoggingHandler):
                 self.station_service_mapping[str(
                     station['id'])] = d.locast_service
 
+        # Only remap once
+        self.config.remap = False
+
         self.log.info(
             f"Got {len(stations)} stations from {len(self.dvrs)} DVRs")
 
