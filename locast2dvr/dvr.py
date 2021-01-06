@@ -177,7 +177,6 @@ class Multiplexer(LoggingHandler):
                 if self.config.remap:
                     (station['channel'], station['callSign']) = _remap(
                         station, i)
-                    print(station['channel'], station['callSign'])
                 self.station_service_mapping[str(
                     station['id'])] = d.locast_service
 
