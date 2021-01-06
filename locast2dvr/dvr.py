@@ -174,10 +174,10 @@ class Multiplexer(LoggingHandler):
         for i, d in enumerate(self.dvrs):
             for station in d.locast_service.get_stations():
                 stations.append(station)
-                if self.config.remap and station['channel'] in channels:
+                if self.config.remap:
                     (station['channel'], station['callSign']) = _remap(
                         station, i)
-                channels.add(station['channel'])
+                    print(station['channel'], station['callSign'])
                 self.station_service_mapping[str(
                     station['id'])] = d.locast_service
 
