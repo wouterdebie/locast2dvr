@@ -21,6 +21,22 @@ MAX_FILE_AGE = 24 * 60 * 60
 
 
 class Facilities(LoggingHandler):
+    __singleton_lock = threading.Lock()
+    __singleton_instance = None
+
+    # define the classmethod
+    @classmethod
+    def instance(cls):
+
+        # check for the singleton instance
+        if not cls.__singleton_instance:
+            with cls.__singleton_lock:
+                if not cls.__singleton_instance:
+                    cls.__singleton_instance = cls()
+
+        # return the singleton instance
+        return cls.__singleton_instance 
+
     def __init__(self):
         """Provides an interface to FCC 'facilities' that contain information on US TV channels
         """

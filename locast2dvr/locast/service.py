@@ -50,8 +50,7 @@ class UserInvalidError(Exception):
 
 class LocastService(LoggingHandler):
     _logged_in = False
-    _fcc_facilities = Facilities()
-    log = logging.getLogger("LocastService")
+    log = logging.getLogger("LocastService")  # Necessary for class methods
 
     def __init__(self, geo: Geo, config: Configuration):
         """Locast service interface based on a specific location
@@ -70,7 +69,7 @@ class LocastService(LoggingHandler):
         self.active = False
         self.dma = None
         self.city = None
-
+        self._fcc_facilities = Facilities.instance()
         self._load_location_data()
 
         # Start cache updater timer if necessary, otherwise, just preload
