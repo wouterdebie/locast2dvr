@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 
 import m3u8
 import requests
+from requests.exceptions import HTTPError
 from locast2dvr.utils import Configuration, LoggingHandler
 
 from .fcc import Facilities
@@ -21,23 +22,27 @@ TOKEN_LIFETIME = 3600
 
 
 class Geo:
-    def __init__(self, zipcode: Optional[str] = None, latlon: Optional[dict] = None):
+    def __init__(self, zipcode: Optional[str] = None, coords: Optional[dict] = None):
         """Object containing location information
 
         Args:
             zipcode (Optional[str], optional): Zipcode. Defaults to None.
-            latlon (Optional[dict], optional): Dict containing latitude and longitude. Defaults to None.
+            coords (Optional[dict], optional): Dict containing latitude and longitude. Defaults to None.
         """
         self.zipcode = zipcode
-        self.latlon = latlon
+        self.coords = coords
 
     def __repr__(self) -> str:
         if self.zipcode:
             return f"Geo(zipcode: {self.zipcode})"
-        elif self.latlon:
-            return f"Geo(latlon: {self.latlon})"
+        elif self.coords:
+            return f"Geo(coords: {self.coords})"
         else:
             return f"Geo(None)"
+
+    def __eq__(self, other):
+        return self.coords == other.coords and \
+            self.zipcode == other.zipcode
 
 
 class LocationInvalidError(Exception):
@@ -51,8 +56,9 @@ class UserInvalidError(Exception):
 class LocastService(LoggingHandler):
     _logged_in = False
     log = logging.getLogger("LocastService")  # Necessary for class methods
+    _login_lock = threading.Lock()
 
-    def __init__(self, geo: Geo, config: Configuration):
+    def __init__(self, config: Configuration, geo: Geo):
         """Locast service interface based on a specific location
 
         Args:
@@ -60,7 +66,7 @@ class LocastService(LoggingHandler):
             config (Configuration): Global configuration
         """
         super().__init__()
-        self.latlon = geo.latlon
+        self.coords = geo.coords
         self.zipcode = geo.zipcode
 
         self.config = config
@@ -69,17 +75,20 @@ class LocastService(LoggingHandler):
         self.active = False
         self.dma = None
         self.city = None
+
+        self._channel_lock = threading.Lock()
+
+    def start(self):
         self._fcc_facilities = Facilities.instance()
         self._load_location_data()
 
         # Start cache updater timer if necessary, otherwise, just preload
         # stations once
-        if config.cache_stations:
-            self._lock = threading.Lock()
+        if self.config.cache_stations:
             self._update_cache()
 
     @classmethod
-    def login(cls, username: str = None, password: str = None) -> bool:
+    def login(cls, username: str = None, password: str = None):
         """Log in to locast.org
 
         This is a class method, so we only have to login once.
@@ -88,35 +97,32 @@ class LocastService(LoggingHandler):
             username (str): Username
             password (str): Password
 
-        Returns:
-            bool: True if successful, False otherwise
-
         """
+        with cls._login_lock:
+            if username:
+                cls.username = username
+            if password:
+                cls.password = password
 
-        if username:
-            cls.username = username
-        if password:
-            cls.password = password
+            cls.log.info(f"Logging in with {cls.username}")
+            try:
+                r = requests.post(LOGIN_URL,
+                                  json={
+                                      "username": cls.username,
+                                      "password": cls.password
+                                  },
+                                  headers={'Content-Type': 'application/json'})
+                r.raise_for_status()
+            except HTTPError as err:
+                raise UserInvalidError(f'Login failed: {err}')
 
-        cls.log.info(f"Logging in with {cls.username}")
-        try:
-            r = requests.post(LOGIN_URL,
-                              json={
-                                  "username": cls.username,
-                                  "password": cls.password
-                              },
-                              headers={'Content-Type': 'application/json'})
-            r.raise_for_status()
-        except requests.exceptions.HTTPError as err:
-            raise UserInvalidError(f'Login failed: {err}')
+            cls.token = r.json()['token']
+            cls._logged_in = True
+            cls.last_login = datetime.now()
 
-        cls.token = r.json()['token']
-        cls._logged_in = True
-        cls.last_login = datetime.now()
+            cls._validate_user()
 
-        cls._validate_user()
-
-        cls.log.info("Locast login successful")
+            cls.log.info("Locast login successful")
 
     @classmethod
     def _validate_user(cls) -> bool:
@@ -144,7 +150,8 @@ class LocastService(LoggingHandler):
         Returns:
             bool: True if valid, False otherwise
         """
-        return (datetime.now() - self.last_login).seconds < TOKEN_LIFETIME
+        with self._login_lock:
+            return (datetime.now() - self.last_login).seconds < TOKEN_LIFETIME
 
     def _validate_token(self):
         """Validate if the login token is still valid. If not, login again to
@@ -166,11 +173,11 @@ class LocastService(LoggingHandler):
 
     def _find_location(self):
         """Set the location data (lat, long, dma and city) based on what
-           method is used to determine the location (latlon, zip or IP)
+           method is used to determine the location (coords, zip or IP)
         """
-        if self.latlon:
+        if self.coords:
             self._set_attrs_from_geo(
-                f'{DMA_URL}/{self.latlon["latitude"]}/{self.latlon["longitude"]}')
+                f'{DMA_URL}/{self.coords["latitude"]}/{self.coords["longitude"]}')
         elif self.zipcode:
             self._set_attrs_from_geo(f'{DMA_URL}/zip/{self.zipcode}')
         else:
@@ -188,7 +195,7 @@ class LocastService(LoggingHandler):
         try:
             r = requests.get(url, headers={'Content-Type': 'application/json'})
             r.raise_for_status()
-        except requests.exceptions.HTTPError as err:
+        except HTTPError as err:
             raise LocationInvalidError(err)
 
         if r.status_code == 204:
@@ -197,7 +204,7 @@ class LocastService(LoggingHandler):
         geo = r.json()
         self.location = {
             'latitude': geo['latitude'], 'longitude': geo['longitude']}
-        self.dma = int(geo['DMA'])
+        self.dma = str(geo['DMA'])
         self.active = geo['active']
         self.city = geo['name']
 
@@ -223,7 +230,7 @@ class LocastService(LoggingHandler):
         """
 
         if self.config.cache_stations:
-            with self._lock:
+            with self._channel_lock:
                 return self._stations
         else:
             return self._get_stations()
@@ -235,7 +242,7 @@ class LocastService(LoggingHandler):
         `self.config.cache_timeout` seconds.add()
         """
         stations = self._get_stations()
-        with self._lock:
+        with self._channel_lock:
             self._stations = stations
         threading.Timer(self.config.cache_timeout, self._update_cache).start()
 
@@ -263,7 +270,9 @@ class LocastService(LoggingHandler):
             # and looking the channel number up from the FCC facilities
             result = (self._detect_callsign(station['name']) or
                       self._detect_callsign(station['callSign']))
+
             if result:  # name or callSign match to a valid call sign
+
                 (call_sign, subchannel) = result
 
                 # Lookup the station from FCC facilities
@@ -275,7 +284,7 @@ class LocastService(LoggingHandler):
                     continue  # Done with this sation
 
             # Can't find the channel number, so we make something up - This shouldn't really happen
-            self.log.warn(
+            self.log.warning(
                 f"Channel (name: {station['name']}, callSign: {station['callSign']}) not found. Assigning {fake_channel}")
             station['channel'] = str(fake_channel)
             fake_channel += 1
@@ -339,7 +348,7 @@ class LocastService(LoggingHandler):
                 'User-Agent': "curl/7.64.1"})
         r.raise_for_status()
 
-        # Stream URLs can either be just URLs or m3u8 playlists with muliple resolutions
+        # Stream URLs can either be just URLs or m3u8 playlists with multiple resolutions
         stream_url = r.json()["streamUrl"]
         m3u8_data = m3u8.load(stream_url)
         if len(m3u8_data.playlists) == 0:

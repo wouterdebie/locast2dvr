@@ -1,4 +1,5 @@
 import io
+from locast2dvr import locast
 import os
 import threading
 import warnings
@@ -19,6 +20,14 @@ DMA_URL = 'http://api.locastnet.org/api/dma'
 CHECK_INTERVAL = 3600
 MAX_FILE_AGE = 24 * 60 * 60
 
+# The FCC file has one facility per line and is column separated by a "|".
+# The columns in the file are the following
+COLUMNS = ["comm_city", "comm_state", "eeo_rpt_ind", "fac_address1", "fac_address2", "fac_callsign",
+           "fac_channel", "fac_city", "fac_country", "fac_frequency", "fac_service", "fac_state", "fac_status_date",
+           "fac_type", "facility_id", "lic_expiration_date", "fac_status", "fac_zip1", "fac_zip2", "station_type",
+           "assoc_facility_id", "callsign_eff_date", "tsid_ntsc", "tsid_dtv", "digital_status", "sat_tv",
+           "network_affil", "nielsen_dma", "tv_virtual_channel", "last_change_date", "end_of_record", "_empty"]
+
 
 class Facilities(LoggingHandler):
     __singleton_lock = threading.Lock()
@@ -33,40 +42,33 @@ class Facilities(LoggingHandler):
             with cls.__singleton_lock:
                 if not cls.__singleton_instance:
                     cls.__singleton_instance = cls()
+                    cls.__singleton_instance._run()
 
         # return the singleton instance
-        return cls.__singleton_instance 
+        return cls.__singleton_instance
 
     def __init__(self):
         """Provides an interface to FCC 'facilities' that contain information on US TV channels
         """
         super().__init__()
-        self._facilities_index = {}
-        self._fcc_dmas = set()
-        self._dma_mapping = {}
-
+        self._dma_facilities_map = {}
+        self._locast_dmas = []
         self.cache_dir = os.path.join(Path.home(), '.locast2dvr')
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
-
         self.cache_file = os.path.join(self.cache_dir, 'facilities.zip')
         self._lock = threading.Lock()
-        self._last_check_ts = 0
-        self._run()
 
-    def by_dma_and_call_sign(self, dma: str, call_sign: str) -> dict:
+    def by_dma_and_call_sign(self, locast_dma: str, call_sign: str) -> dict:
         """Look up a facility by Designated Market Area (DMA)
 
         Args:
-            dma (str): Designated Market Area to search through
+            locast_dma (str): Designated Market Area to search through
             call_sign (str): Call sign to look for
 
         Returns:
             dict: Returns a dict containing the channel name and if the channel is analog or not
         """
         with self._lock:
-            facility = self._facilities_index.get(
-                (self._dma_mapping[dma], call_sign))
+            facility = self._dma_facilities_map.get((locast_dma, call_sign))
             if facility:
                 return {
                     "channel": facility['tv_virtual_channel'] or facility['fac_channel'],
@@ -79,20 +81,25 @@ class Facilities(LoggingHandler):
         This method checks if a facilities file exists and how old it is. If it doesn't exist
         or is older than 24 hours, it will redownload the file and cache it.
         """
-
         data = None
 
-        if not os.path.exists(self.cache_file) or datetime.now().timestamp() - os.path.getmtime(self.cache_file) > MAX_FILE_AGE:
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
+
+        now = datetime.now().timestamp()
+
+        if not os.path.exists(self.cache_file) or now - os.path.getmtime(self.cache_file) > MAX_FILE_AGE:
             data = self._download()
             self._write_cache_file(data)
-        elif not self._facilities_index:
+        elif not self._dma_facilities_map:
             self.log.info(f"Using cached file: {self.cache_file}")
             data = self._read_cache_file()
 
         if data:
             self._process(self._unzip(data))
-            self._load_dma_mapping()
             self.log.info("Done loading..")
+        else:
+            self.log.debug("Facilities are still fresh..")
 
         threading.Timer(CHECK_INTERVAL, self._run).start()
 
@@ -153,20 +160,12 @@ class Facilities(LoggingHandler):
         Args:
             facilities (str): Uncompressed facilities file contents
         """
-        # The FCC file has one facility per line and is column separated by a "|".
-        # The columns in the file are the following
-        COLUMNS = ["comm_city", "comm_state", "eeo_rpt_ind", "fac_address1", "fac_address2", "fac_callsign",
-                   "fac_channel", "fac_city", "fac_country", "fac_frequency", "fac_service", "fac_state", "fac_status_date",
-                   "fac_type", "facility_id", "lic_expiration_date", "fac_status", "fac_zip1", "fac_zip2", "station_type",
-                   "assoc_facility_id", "callsign_eff_date", "tsid_ntsc", "tsid_dtv", "digital_status", "sat_tv",
-                   "network_affil", "nielsen_dma", "tv_virtual_channel", "last_change_date", "end_of_record"]
 
         with self._lock:
             # Reset everything before processing
-            self._fcc_dmas = set()
-            self._dma_mapping = {}
+            self._locast_dmas = []
 
-            for line in facilities.split("\n"):
+            for i, line in enumerate(facilities.split("\n")):
                 if not line:
                     continue
 
@@ -174,14 +173,19 @@ class Facilities(LoggingHandler):
                 facility = {}
                 cells = line.split("|")
 
+                if len(cells) != len(COLUMNS):
+                    raise Exception(
+                        f"Unable to parse FCC facility on line {i+1}. Length: {len(cells)}, expected: {len(COLUMNS)}")
+
                 # Map the line into a dict, so it's easier to work with
                 for i, col in enumerate(COLUMNS):
                     facility[col] = cells[i]
 
                 # Only care about specific facilities
                 if facility["lic_expiration_date"] and \
-                        facility["fac_status"] == 'LICEN' and \
-                        facility['fac_service'] in ('DT', 'TX', 'TV', 'TB', 'LD', 'DC'):
+                   facility["nielsen_dma"] and \
+                   facility["fac_status"] == 'LICEN' and \
+                   facility['fac_service'] in ('DT', 'TX', 'TV', 'TB', 'LD', 'DC'):
 
                     # Only care about non expired licence facilities
                     lic_expiration_date = datetime.strptime(
@@ -191,37 +195,28 @@ class Facilities(LoggingHandler):
                     # Add the facility to the index, keyed by nielsen_dma and fac_callsign
                     if lic_expiration_date > datetime.now():
                         nielsen_dma = facility['nielsen_dma']
-                        fac = facility['fac_callsign'].split("-")[0]
-                        self._facilities_index[(nielsen_dma, fac)] = facility
+                        call_sign = facility['fac_callsign'].split("-")[0]
 
-                    if facility['nielsen_dma']:
-                        self._fcc_dmas.add(facility['nielsen_dma'])
+                        locast_dma_id = self._map_fcc_to_locast_dma_id(
+                            nielsen_dma)
 
-    def _load_dma_mapping(self):
-        """Load locast DMA ID's and map them to Nielsen DMAs. This uses fuzzy name matching.
+                        if locast_dma_id:
+                            key = (locast_dma_id, call_sign)
+                            self._dma_facilities_map[key] = facility
 
-        Raises:
-            SystemExit: if no FCC DMA can be found for a locast DMA
-            HTTPError: if the request for DMAs to locast fails
-        """
-        r = requests.get(DMA_URL)
-        r.raise_for_status()
-        for locast_dma in r.json():
-            fcc_dma = None
-            for dma in self._fcc_dmas:
-                # Tampa Bay and Tampa don't match directly, so we force a match
-                if locast_dma["id"] == 539:
-                    test_string = locast_dma['name'].split()[0].lower()
-                else:
-                    test_string = locast_dma['name'].lower()
+    def _map_fcc_to_locast_dma_id(self, fcc_dma: str) -> str:
+        if not self._locast_dmas:
+            r = requests.get(DMA_URL)
+            r.raise_for_status()
+            self._locast_dmas = r.json()
 
-                ratio = fuzz.partial_ratio(test_string, dma.lower())
+        for locast_dma in self._locast_dmas:
+            # Tampa Bay and Tampa don't match directly, so we force a match
+            if locast_dma["id"] == 539:
+                test_string = locast_dma['name'].split()[0].lower()
+            else:
+                test_string = locast_dma['name'].lower()
 
-                if ratio == 100:
-                    fcc_dma = dma
-                    break
-            if not fcc_dma:
-                raise SystemExit(
-                    f"Can't find FCC DMA for {locast_dma['id']}, {locast_dma['name']}")
-
-            self._dma_mapping[locast_dma["id"]] = fcc_dma
+            ratio = fuzz.partial_ratio(test_string, fcc_dma.lower())
+            if ratio == 100:
+                return str(locast_dma["id"])

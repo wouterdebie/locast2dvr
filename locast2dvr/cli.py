@@ -1,16 +1,11 @@
-#!/usr/bin/env python3
-
 import locast2dvr
-import logging
-import sys
 
 import click
 import click_config_file
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
 from .utils import Configuration
-
-logger = logging.getLogger("CLI")
+from .main import Main
 
 
 @click.command(context_settings=dict(
@@ -45,16 +40,4 @@ logger = logging.getLogger("CLI")
 def cli(*args, **config):
     """Locast to DVR (like Plex or Emby) integration server"""
     config = Configuration(config)
-    log_level = logging.DEBUG if config.verbose >= 2 else logging.INFO
-    if sys.stdout.isatty():
-        logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s: %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S', level=log_level)
-    else:
-        logging.basicConfig(format='%(levelname)s - %(name)s: %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S', level=log_level)
-
-    # We only import main after the configuration is valid and logging is set,
-    # since loading Main will load a bunch of other stuff
-    logger.info(f"locast2dvr {locast2dvr.__version__} starting")
-    from .main import Main
     Main(config).start()

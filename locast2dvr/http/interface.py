@@ -11,7 +11,7 @@ from locast2dvr.utils import Configuration
 import functools
 
 
-def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: LocastService) -> Flask:
+def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: LocastService, station_scan=False) -> Flask:
     """Create a Flask app that is used to interface with PMS and acts like a DVR device
 
     Args:
@@ -19,14 +19,13 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         port (int): TCP port this app will be bound to
         uid (str): Unique ID for this app. PMS uses this to identify DVRs
         locast_service (locast.Service): Locast service object
+        station_scan (bool): used for testing only (default: False)
 
     Returns:
         Flask: A Flask app that can interface with PMS and mimics a DVR device
     """
     log = logging.getLogger("HTTPInterface")
     app = Flask(__name__)
-
-    station_scan = False
 
     host_and_port = f'{config.bind_address}:{port}'
 
@@ -100,9 +99,9 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         return "#EXTM3U\n" + "\n".join(
             [(
                 f"#EXTINF:-1, {station['name']} "
-                f'tvg-name="{name_only(station.get("callSign")) or station.get("name")} ({station["city"]})" '
+                f'tvg-name="{name_only(station.get("callSign") or station.get("name"))} ({station["city"]})" '
                 f'tvg-id="channel.{station["id"]}" '
-                f'tvg-chno="{station["channel"]}" '
+                f'tvg-chno="{station["channel"]}"'
                 '\n'
                 f"http://{host_and_port}/watch/{station['id']}.m3u\n"
             ) for station in locast_service.get_stations()]

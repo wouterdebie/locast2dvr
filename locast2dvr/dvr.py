@@ -4,6 +4,7 @@ import threading
 import traceback
 
 import waitress
+from paste.translogger import TransLogger
 
 from .http import HTTPInterface
 from .locast import Geo, LocastService
@@ -30,13 +31,7 @@ class DVR(LoggingHandler):
         self.port = port
         self.uid = uid
         self.ssdp = ssdp
-        try:
-            self.locast_service = LocastService(self.geo, self.config)
-            self.log.info(f"{self} created")
-
-        except Exception as err:
-            logging.error(err)
-            os._exit(1)
+        self.locast_service = LocastService(self.config, self.geo)
 
     @property
     def city(self):
@@ -57,13 +52,18 @@ class DVR(LoggingHandler):
 
     def start(self):
         """Start the DVR 'device'"""
-
-        # Create a Flask app that handles the interaction with PMS/Emby if we need to. Here
-        # we tie the locast.Service to the Flask app.
-        if self.port:
-            _start_http(self.config, self.port, self.uid,
-                        self.locast_service, self.ssdp, self.log)
-            self.log.info(f"{self} HTTP interface started")
+        try:
+            self.locast_service.start()
+            # Create a Flask app that handles the interaction with PMS/Emby if we need to. Here
+            # we tie the locast.Service to the Flask app.
+            if self.port:
+                _start_http(self.config, self.port, self.uid,
+                            self.locast_service, self.ssdp, self.log)
+                self.log.info(f"{self} HTTP interface started")
+            self.log.info(f"{self} started")
+        except Exception as e:
+            logging.exception(e)
+            os._exit(1)
 
     def __repr__(self) -> str:
         if self.port:
@@ -83,27 +83,26 @@ def _start_http(config: Configuration, port: int, uid: str, locast_service: Loca
         locast_service (Service): Locast service bound to the Flask app
         ssdp (SSDPServer): SSDP server to announce on
     """
-
     # Create a FlaskApp and tie it to the locast_service
     app = HTTPInterface(config, port, uid, locast_service)
 
     # Insert logging middle ware if we want verbose access logging
     if config.verbose > 0:
-        from paste.translogger import TransLogger
+        logger = logging.getLogger("HTTPInterface")
         format = (f'{config.bind_address}:{port} %(REMOTE_ADDR)s - %(REMOTE_USER)s '
                   '"%(REQUEST_METHOD)s %(REQUEST_URI)s %(HTTP_VERSION)s" '
                   '%(status)s %(bytes)s "%(HTTP_REFERER)s" "%(HTTP_USER_AGENT)s"')
         app = TransLogger(
-            app, logger=logging.getLogger("HTTPInterface"), format=format)
+            app, logger=logger, format=format)
 
-    def my_excepthook(args):
+    def _excepthook(args):
         if args.exc_type == OSError:
             log.error(args.exc_value)
             log.error(traceback.print_tb(args.exc_traceback))
             os._exit(-1)
         print('Unhandled error:', )
 
-    threading.excepthook = my_excepthook
+    threading.excepthook = _excepthook
 
     # Start the Flask app on a separate thread
     threading.Thread(target=waitress.serve, args=(app,),
@@ -118,7 +117,7 @@ def _start_http(config: Configuration, port: int, uid: str, locast_service: Loca
 
 
 class Multiplexer(LoggingHandler):
-    def __init__(self, port: int, config: Configuration, ssdp: SSDPServer):
+    def __init__(self, config: Configuration,  port: int, ssdp: SSDPServer):
         """Object that behaves like a `locast.Service`, but multiplexes multiple DVRs
 
         Args:
@@ -169,7 +168,6 @@ class Multiplexer(LoggingHandler):
             f"Loading all stations..")
         self.station_service_mapping = {}
         stations = []
-        channels = set()
 
         for i, d in enumerate(self.dvrs):
             for station in d.locast_service.get_stations():

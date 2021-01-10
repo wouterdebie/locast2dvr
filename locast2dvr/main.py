@@ -1,4 +1,5 @@
 import distutils.spawn
+import locast2dvr
 import sys
 
 from tabulate import tabulate
@@ -12,18 +13,42 @@ from .utils import Configuration, LoggingHandler
 class Main(LoggingHandler):
     def __init__(self, config: Configuration) -> None:
         super().__init__()
+        LoggingHandler.init_logging(config)
+        self.log.info(f"locast2dvr {locast2dvr.__version__} starting")
+
         self.config = config
-        self.login()
+        self.geos: list[Geo] = []
+        self.dvrs: list[DVR] = []
+        self.multiplexer: Multiplexer = None
+        self.ssdp: SSDPServer = None
+
+    def start(self):
         self.ssdp = SSDPServer()
+
+        self._login()
         self._init_geos()
+
         self._init_multiplexer()
         self._init_dvrs()
+        self._check_ffmpeg()
+
+        self.ssdp.start()
+
+        # Start all DVRs
+        for dvr in self.dvrs:
+            dvr.start()
+
+        if self.multiplexer:
+            self.multiplexer.register(self.dvrs)
+            self.multiplexer.start()
+
+        self._report()
 
     def _init_geos(self):
         # Create Geo objects based on configuration.
         if self.config.override_location:
             (lat, lon) = self.config.override_location.split(",")
-            self.geos = [Geo(latlon={
+            self.geos = [Geo(coords={
                 'latitude': lat,
                 'longitude': lon
             })]
@@ -37,10 +62,10 @@ class Main(LoggingHandler):
     def _init_multiplexer(self):
         if self.config.multiplex and self.config.multiplex_debug:
             self.multiplexer = Multiplexer(
-                self.config.port + len(self.geos), self.config, self.ssdp)
+                self.config, self.config.port + len(self.geos),  self.ssdp)
         elif self.config.multiplex:
             self.multiplexer = Multiplexer(
-                self.config.port, self.config, self.ssdp)
+                self.config, self.config.port, self.ssdp)
         else:
             self.multiplexer = None
 
@@ -49,29 +74,16 @@ class Main(LoggingHandler):
         for i, geo in enumerate(self.geos):
             dvrs.append(DVR(geo, self._uid(i), self.config,
                             self.ssdp, port=self._port(i)))
-        self.dvrs = dvrs
+        self.dvrs: list[DVR] = dvrs
 
-    def _port(self, i):
+    def _port(self, i: int):
         if (self.config.multiplex and self.config.multiplex_debug) or not self.config.multiplex:
             return self.config.port + i
 
     def _uid(self, i):
         return f"{self.config.uid}_{i}"
 
-    def start(self):
-        self.check_ffmpeg()
-        self.ssdp.start()
-
-        # Start all DVRs
-        [dvr.start() for dvr in self.dvrs]
-
-        if self.multiplexer:
-            self.multiplexer.register(self.dvrs)
-            self.multiplexer.start()
-
-        self.report()
-
-    def report(self):
+    def _report(self):
         self.log.info("DVRs:")
         header = ["City", "Zipcode", "DMA", "UID", "URL"]
         dvrs = [[d.city, d.zipcode, d.dma, d.uid, d.url or "(not listening)"]
@@ -87,7 +99,7 @@ class Main(LoggingHandler):
             for l in tabulate(m, header).split("\n"):
                 self.log.info(f"  {l}")
 
-    def check_ffmpeg(self):
+    def _check_ffmpeg(self):
         # Test if we have a valid ffmpeg executable
         self.config.ffmpeg = distutils.spawn.find_executable(
             self.config.ffmpeg or 'ffmpeg')
@@ -96,7 +108,7 @@ class Main(LoggingHandler):
         else:
             self.log.warn('ffmpeg not found! Only use as a m3u tuner!')
 
-    def login(self):
+    def _login(self):
         # Login to locast.org. We only have to do this once.
         try:
             LocastService.login(self.config.username, self.config.password)

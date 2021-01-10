@@ -6,4 +6,5 @@ locast2dvr.egg-info/
 build
 dist
 **/.DS_Store
-*/**.pyc
+*.pyc
+.coverage

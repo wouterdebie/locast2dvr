@@ -40,6 +40,6 @@ setup(
     install_requires=install_requires,
     entry_points='''
         [console_scripts]
-        locast2dvr=locast2dvr:cli
+        locast2dvr=locast2dvr.cli:cli
     ''',
 )
