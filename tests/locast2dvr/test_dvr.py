@@ -32,6 +32,7 @@ class TestDVR(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'bind_address': '1.2.3.4'
         })
 
@@ -58,6 +59,7 @@ class TestProperties(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'bind_address': '1.2.3.4'
         })
 
@@ -84,6 +86,7 @@ class TestDVRStart(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'bind_address': '1.2.3.4'
         })
 
@@ -132,6 +135,7 @@ class TestRepr(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'bind_address': '1.2.3.4'
         })
 
@@ -161,6 +165,7 @@ class TestStartHttp(unittest.TestCase):
 
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'bind_address': '1.2.3.4'
         })
 

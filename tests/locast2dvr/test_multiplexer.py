@@ -13,6 +13,7 @@ class TestMultiPlexer(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'bind_address': '1.2.3.4',
             'uid': "TEST",
             'remap': False

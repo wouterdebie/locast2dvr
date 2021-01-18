@@ -12,7 +12,8 @@ from locast2dvr.utils import Configuration
 class TestMain(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
-            "verbose": 0
+            "verbose": 0,
+            "logfile": None
         })
 
     def test_main(self):
@@ -27,7 +28,8 @@ class TestMain(unittest.TestCase):
 class TestGeos(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
-            "verbose": 0
+            "verbose": 0,
+            "logfile": None
         })
 
     def test_override_locations(self):
@@ -69,6 +71,7 @@ class TestMultiplexer(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'multiplex': False,
             'multiplex_debug': False,
             'port': 6077
@@ -102,6 +105,7 @@ class TestDVRs(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'uid': 'TEST',
             'multiplex': False,
             'multiplex_debug': False,
@@ -146,6 +150,7 @@ class TestUtilities(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'uid': 'TEST',
             'multiplex': False,
             'multiplex_debug': False,
@@ -187,7 +192,7 @@ class TestUtilities(unittest.TestCase):
 @patch('locast2dvr.main.SSDPServer')
 class TestStart(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = Configuration({'verbose': 0})
+        self.config = Configuration({'verbose': 0, 'logfile': None})
 
     def test_startup_order(self, ssdp_server: MagicMock):
         with patch.multiple('locast2dvr.main.Main', _login=MagicMock(),
@@ -238,7 +243,7 @@ class TestStart(unittest.TestCase):
 
 class TestReport(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = Configuration({'verbose': 0})
+        self.config = Configuration({'verbose': 0, 'logfile': None})
 
     def test_report(self):
         main = Main(self.config)
@@ -292,7 +297,7 @@ class TestReport(unittest.TestCase):
 
 class TestFFMPEG(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = Configuration({'verbose': 0})
+        self.config = Configuration({'verbose': 0, 'logfile': None})
 
     def test_ffmpeg_default(self):
         self.config.ffmpeg = None
@@ -332,6 +337,7 @@ class TestLogin(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
+            'logfile': None,
             'username': 'foo',
             'password': 'secret'
         })
