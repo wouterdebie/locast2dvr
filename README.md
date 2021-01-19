@@ -1,5 +1,7 @@
 # locast2dvr
 
+[![Build Status](https://travis-ci.com/wouterdebie/locast2dvr.svg?branch=main)](https://travis-ci.com/wouterdebie/locast2dvr)
+
 This application provides an interface between locast.org and [Plex Media Server (PMS)](https://plex.tv) or [Emby](https://emby.media) by acting like a [HDHomerun](https://www.silicondust.com/) or an m3u Tuner and an XMLTV provider.
 
 `locast2dvr` can imitate one or more DVR tuners and provides geo cloaking across regions.

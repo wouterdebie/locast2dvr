@@ -3,11 +3,9 @@ python:
   - "3.7"
   - "3.8"
   - "3.9"
-# command to install dependencies
 install:
   - pip install -r requirements.txt
   - pip install --editable .
-# command to run tests
 script:
   - pytest -s --verbose --cov=locast2dvr --cov-report term-missing tests
   - coverage report --fail-under=100
