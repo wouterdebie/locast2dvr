@@ -1,0 +1,2 @@
+[run]
+omit = locast2dvr/ssdp/server.py
