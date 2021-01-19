@@ -85,6 +85,8 @@
     </audio>
     {%- if program['isNew'] %}
       <new />
+    {%- else %}
+      <previously-shown />
     {%- endif %}
     {%- if program['rating'] %}
     <rating>
