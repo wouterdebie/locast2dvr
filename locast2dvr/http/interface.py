@@ -159,6 +159,19 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y%m%d')
 
     @app.template_filter()
+    def format_date_iso(value: int) -> str:
+        """Convert an epoch timestamp to YYYY-mm-dd
+
+        Args:
+            value (str): Epoch timestamp string
+
+        Returns:
+            str: String as YYYY-mm-dd
+        """
+
+        return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y-%m-%d')
+
+    @app.template_filter()
     def format_time(value: int) -> str:
         """Return an epoch timestamp to YYYYmmdddHHMMSS
 
@@ -169,6 +182,18 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             str: String as YYYYmmdddHHMMSS
         """
         return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y%m%d%H%M%S')
+
+    @app.template_filter()
+    def format_time_iso(value: int) -> str:
+        """Return an epoch timestamp to YYYY-mm-dd HH:MM:SS
+
+        Args:
+            value (str): Epoch timestamp string
+
+        Returns:
+            str: String as YYYY-mm-dd HH:MM:SS
+        """
+        return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y-%m-%d %H:%M:%S')
 
     @app.template_filter()
     def aspect(value: str) -> str:

@@ -29,6 +29,22 @@
     {%- if program['description'] %}
     <desc lang="en">{{program['description']}}</desc>
     {%- endif %}
+    {%- if program['directors'] or program['topCast'] %}
+    <credits>
+      {%- if program['directors'] %}
+      {%- set directors = program['directors'].split(', ') -%}
+      {%- for director in directors %}
+      <director>{{director}}</director>
+      {%- endfor %}
+      {%- endif %}
+      {%- if program['topCast'] %}
+      {%- set actors = program['topCast'].split(', ') -%}
+      {%- for actor in actors %}
+      <actor>{{actor}}</actor>
+      {%- endfor %}
+      {%- endif %}
+    </credits>
+    {%- endif %}
     {%- if program['releaseDate'] %}
     <date>{{program['releaseDate']|format_date}}</date>
     {%- endif %}
@@ -49,6 +65,12 @@
     <episode-num system="xmltv_ns">{{program['seasonNumber'] - 1}}.{{program['episodeNumber'] - 1}}.</episode-num>
     {%- elif program['episodeNumber'] %}
     <episode-num system="xmltv_ns">0.{{program['episodeNumber'] - 1}}.</episode-num>
+
+    {%- elif program['genres'] == 'News' or (program['entityType'] != 'Movie' and program['isNew']) %}
+    <episode-num system="original-air-date">{{program['startTime']|format_time_iso}}</episode-num>
+    
+    {%- elif program['entityType'] != 'Movie' and program['airdate'] %}
+    <episode-num system="original-air-date">{{program['airdate']|format_date_iso}}</episode-num>
     {%- endif %}
     {%- if program['videoProperties'] %}
     <video>
@@ -63,6 +85,11 @@
     </audio>
     {%- if program['isNew'] %}
       <new />
+    {%- endif %}
+    {%- if program['rating'] %}
+    <rating>
+      <value>{{program['rating']}}</value>
+    </rating>
     {%- endif %}
   </programme>
   {%- endfor -%}
