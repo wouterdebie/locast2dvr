@@ -38,6 +38,9 @@
     <category lang="en">{{category}}</category>
     {%- endfor %}
     {%- endif %}
+    {%- if program['showType'] %}
+    <category lang="en">{{program['showType']}}</category>
+    {%- endif %}
     <length units="seconds">{{program['duration']}}</length>
     {%- if program['preferredImage'] %}
     <icon src="{{program['preferredImage']}}" height="{{program['preferredImageHeight']}}" width="{{program['preferredImageWidth']}}"/>
@@ -58,6 +61,9 @@
       <present>yes</present>
       <stereo>stereo</stereo>
     </audio>
+    {%- if program['isNew'] %}
+      <new />
+    {%- endif %}
   </programme>
   {%- endfor -%}
 {%- endfor %}
