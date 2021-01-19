@@ -1,4 +1,5 @@
 import distutils.spawn
+import platform
 import sys
 
 from tabulate import tabulate
@@ -15,7 +16,9 @@ class Main(LoggingHandler):
     def __init__(self, config: Configuration) -> None:
         super().__init__()
         LoggingHandler.init_logging(config)
-        self.log.info(f"locast2dvr {locast_version} starting")
+        platform_description = f"{platform.python_implementation()} {platform.python_version()}, {platform.platform()}"
+        self.log.info(
+            f"locast2dvr {locast_version} running on {platform_description} starting")
 
         self.config = config
         self.geos: list[Geo] = []
