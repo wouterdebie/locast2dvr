@@ -1,3 +1,4 @@
+import m3u8
 from m3u8.model import M3U8
 from locast2dvr.locast.service import DMA_URL, IP_URL, STATIONS_URL, WATCH_URL
 from logging import Logger
@@ -578,4 +579,43 @@ class TestStreamUri(unittest.TestCase):
 
         response.json.assert_called()
         self.assertEqual(result, "stream_url")
-        m3u8.load.assert_called()  # _with("stream_url")
+        m3u8.load.assert_called_with("stream_url")
+
+    def test_get_playlist(self, _m3u8, requests: MagicMock()):
+        service = LocastService(self.config, MagicMock())
+        service._validate_token = MagicMock()
+        service.token = "TOKEN"
+        service.location = {
+            "latitude": "10.0",
+            "longitude": "-34.5"
+        }
+        requests.get = get = MagicMock()
+        requests.get.return_value = response = MagicMock()
+        response.json.return_value = {
+            "streamUrl": "http://stream_url/foo"
+        }
+
+        m3u_data = m3u8.loads("""#EXTM3U
+            #EXT-X-VERSION:3
+            #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1600000,RESOLUTION=854x480
+            ../variant/5fq9TaMBBU9Qp87sj8IRbWh7QK01B4b5PNvMbHHcyCmvY2GoVIpufr0oIGBWuT88ZCWnUERTb3dzCYoeSbzYTBwV9XSQftUljPy3qfRVvAJq.m3u8
+            #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1024000,RESOLUTION=640x360
+            ../variant/5fq9TaMBBU9Qp87sj8IRbWh7QK01B4b5PNvMbHHcyCmvY2GoVIpufr0oIGBWuT88YXtZOaPXHcKs0P2wjlxc0oBTepH6VhAy6lODslybGe0z.m3u8
+            #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2700000,RESOLUTION=1280x720
+            ../variant/5fq9TaMBBU9Qp87sj8IRbWh7QK01B4b5PNvMbHHcyCmvY2GoVIpufr0oIGBWuT88YgHlZ1zmnMfSC8xXfEy2AvYS1rcvAjmOaxKgKvYM7w7h.m3u8
+            """.lstrip().rstrip())
+        _m3u8.load.return_value = m3u_data
+        m3u_data.base_uri = "http://stream_url/foo"
+        result = service.get_station_stream_uri("1000")
+
+        response.raise_for_status.assert_called()
+        get.assert_called_once_with(
+            f'{WATCH_URL}/1000/10.0/-34.5',
+            headers={
+                'Content-Type': 'application/json',
+                'authorization': 'Bearer TOKEN',
+                'User-Agent': "curl/7.64.1"})
+
+        response.json.assert_called()
+        self.assertEqual(
+            result, "http://stream_url/variant/5fq9TaMBBU9Qp87sj8IRbWh7QK01B4b5PNvMbHHcyCmvY2GoVIpufr0oIGBWuT88YgHlZ1zmnMfSC8xXfEy2AvYS1rcvAjmOaxKgKvYM7w7h.m3u8")

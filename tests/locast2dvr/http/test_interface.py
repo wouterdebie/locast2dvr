@@ -202,14 +202,11 @@ class TestInterfaceEPGXML(unittest.TestCase):
                         "title": "ProgramTitle",
                         "description": "Program Description",
                         "releaseDate": 1161561600000,
-                        "genres": "horror, action",
+                        "genres": "News",
                         "preferredImage": "http://programimage",
                         "preferredImageHeight": 360,
                         "preferredImageWidth": 240,
-                        "episodeNumber": 10,
-                        "seasonNumber": 2,
-                        "videoProperties": "CC, HD 720p, HDTV, Stereo"
-
+                        "videoProperties": "CC, HD 720p, HDTV, Stereo",
                     }
                 ]
             },
@@ -232,6 +229,27 @@ class TestInterfaceEPGXML(unittest.TestCase):
                         "episodeNumber": 10,
                         "seasonNumber": 2,
                         "videoProperties": "CC, Stereo"
+                    }
+                ]
+            },
+            {
+                "name": "2.1 NAME2",
+                "city": "Chicago",
+                "id": "4321",
+                "channel": "2.1",
+                "listings": [
+                    {
+                        "startTime": 1610582400000,
+                        "duration": 1800,
+                        "title": "ProgramTitle",
+                        "description": "Program Description",
+                        "releaseDate": 1161561600000,
+                        "genres": "horror, action",
+                        "preferredImage": "http://programimage",
+                        "preferredImageHeight": 360,
+                        "preferredImageWidth": 240,
+                        "videoProperties": "CC, Stereo",
+                        "airdate": 1610582400
                     }
                 ]
             }
