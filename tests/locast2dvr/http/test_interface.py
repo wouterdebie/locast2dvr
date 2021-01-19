@@ -1,13 +1,13 @@
-from flask.wrappers import Response
-from werkzeug.wrappers import ResponseStream
-from locast2dvr.utils import Configuration
-import unittest
-from flask import Flask
-from mock import MagicMock, patch
-from locast2dvr.http.interface import HTTPInterface
-from xml.etree import ElementTree
 import json
 import subprocess
+import unittest
+from xml.etree import ElementTree
+
+from flask import Flask
+from flask.wrappers import Response
+from locast2dvr.http.interface import HTTPInterface
+from locast2dvr.utils import Configuration
+from mock import MagicMock, patch
 
 
 class TestHTTPInterface(unittest.TestCase):

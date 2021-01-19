@@ -1,9 +1,8 @@
-from locast2dvr import ssdp
 import unittest
 
-from build.lib.locast2dvr.dvr import DVR
 from mock import MagicMock, patch
 
+from locast2dvr.dvr import DVR
 from locast2dvr.locast import Geo
 from locast2dvr.main import Main
 from locast2dvr.utils import Configuration

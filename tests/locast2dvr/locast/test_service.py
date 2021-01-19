@@ -1,16 +1,17 @@
-import m3u8
-from m3u8.model import M3U8
-from locast2dvr.locast.service import DMA_URL, IP_URL, STATIONS_URL, WATCH_URL
-from logging import Logger
 import threading
-
-from requests.exceptions import HTTPError
-from locast2dvr.utils import Configuration
 import unittest
-from freezegun import freeze_time
-from mock import MagicMock, PropertyMock, patch
-from locast2dvr.locast.service import Geo, LOGIN_URL, LocastService, LocationInvalidError, USER_URL, UserInvalidError
 from datetime import datetime
+from logging import Logger
+
+import m3u8
+from freezegun import freeze_time
+from locast2dvr.locast.service import (DMA_URL, IP_URL, LOGIN_URL,
+                                       STATIONS_URL, USER_URL, WATCH_URL, Geo,
+                                       LocastService, LocationInvalidError,
+                                       UserInvalidError)
+from locast2dvr.utils import Configuration
+from mock import MagicMock, PropertyMock, patch
+from requests.exceptions import HTTPError
 
 
 class TestGeo(unittest.TestCase):

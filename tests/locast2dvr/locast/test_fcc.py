@@ -2,9 +2,8 @@ import threading
 import unittest
 
 from freezegun import freeze_time
-import mock
 from locast2dvr.locast.fcc import CHECK_INTERVAL, FACILITIES_URL, Facilities
-from mock import MagicMock, patch, mock_open
+from mock import MagicMock, mock_open, patch
 
 
 def create_facility():

@@ -1,11 +1,9 @@
-import locast2dvr
-
 import click
 import click_config_file
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
-from .utils import Configuration
 from .main import Main
+from .utils import Configuration
 
 
 @click.command(context_settings=dict(

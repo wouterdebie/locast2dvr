@@ -1,8 +1,9 @@
-from locast2dvr.utils import Configuration
-from locast2dvr.dvr import Multiplexer, _remap
-from mock import MagicMock
 import unittest
-from mock import patch
+
+from mock import MagicMock, patch
+
+from locast2dvr.dvr import Multiplexer, _remap
+from locast2dvr.utils import Configuration
 
 
 def create_multiplexer(config=MagicMock(),  port=6077, ssdp=MagicMock()):

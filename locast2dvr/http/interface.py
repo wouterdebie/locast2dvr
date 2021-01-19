@@ -8,8 +8,6 @@ from flask.templating import render_template
 from locast2dvr.locast import LocastService
 from locast2dvr.utils import Configuration
 
-import functools
-
 
 def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: LocastService, station_scan=False) -> Flask:
     """Create a Flask app that is used to interface with PMS and acts like a DVR device

@@ -1,8 +1,9 @@
 import distutils.spawn
-import locast2dvr
 import sys
 
 from tabulate import tabulate
+
+from locast2dvr import __version__ as locast_version
 
 from .dvr import DVR, Multiplexer
 from .locast import Geo, LocastService
@@ -14,7 +15,7 @@ class Main(LoggingHandler):
     def __init__(self, config: Configuration) -> None:
         super().__init__()
         LoggingHandler.init_logging(config)
-        self.log.info(f"locast2dvr {locast2dvr.__version__} starting")
+        self.log.info(f"locast2dvr {locast_version} starting")
 
         self.config = config
         self.geos: list[Geo] = []

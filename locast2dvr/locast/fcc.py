@@ -1,5 +1,4 @@
 import io
-from locast2dvr import locast
 import os
 import threading
 import warnings

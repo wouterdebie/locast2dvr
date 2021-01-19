@@ -5,6 +5,7 @@ import types
 import unittest
 
 from mock import DEFAULT, MagicMock, patch
+
 from locast2dvr.dvr import DVR
 from locast2dvr.utils import Configuration
 

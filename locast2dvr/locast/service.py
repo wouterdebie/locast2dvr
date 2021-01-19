@@ -6,8 +6,8 @@ from typing import Optional, Tuple
 
 import m3u8
 import requests
-from requests.exceptions import HTTPError
 from locast2dvr.utils import Configuration, LoggingHandler
+from requests.exceptions import HTTPError
 
 from .fcc import Facilities
 
