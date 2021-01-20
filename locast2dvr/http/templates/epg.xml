@@ -5,7 +5,7 @@
 {%- for station in stations %}
   <channel id="channel.{{station['id']}}">
     {%- if station['callSign'] %}
-    <display-name lang="en">{{station['callSign_remapped'] or station['callSign']|name_only}}</display-name>
+    <display-name lang="en">{{(station['callSign_remapped'] or station['callSign'])|name_only}}</display-name>
     {%- endif %}
     {%- if station['callSign'] %}
     <display-name lang="en">{{station['callSign_remapped'] or station['callSign']}}</display-name>
