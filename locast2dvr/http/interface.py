@@ -98,9 +98,9 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         return "#EXTM3U\n" + "\n".join(
             [(
                 f"#EXTINF:-1, {station['name']} "
-                f'tvg-name="{name_only(station.get("callSign") or station.get("name"))} ({station["city"]})" '
+                f'tvg-name="{name_only(station.get("callSign_remapped") or station.get("callSign") or station.get("name"))} ({station["city"]})" '
                 f'tvg-id="channel.{station["id"]}" '
-                f'tvg-chno="{station["channel"]}"'
+                f'tvg-chno="{station.get("channel_remapped") or station["channel"]}"'
                 '\n'
                 f"http://{host_and_port}/watch/{station['id']}.m3u\n"
             ) for station in locast_service.get_stations()]
@@ -130,7 +130,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             Response: JSON containing the GuideNumber, GuideName and URL for each channel
         """
         return jsonify([{
-            "GuideNumber": station['channel'],
+            "GuideNumber": station.get('channel_remapped') or station['channel'],
             "GuideName": station['name'],
             "URL": f"http://{host_and_port}/watch/{station['id']}"
         } for station in locast_service.get_stations()])

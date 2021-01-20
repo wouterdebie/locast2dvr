@@ -5,16 +5,16 @@
 {%- for station in stations %}
   <channel id="channel.{{station['id']}}">
     {%- if station['callSign'] %}
-    <display-name lang="en">{{station['callSign']|name_only}}</display-name>
+    <display-name lang="en">{{station['callSign_remapped'] or station['callSign']|name_only}}</display-name>
     {%- endif %}
     {%- if station['callSign'] %}
-    <display-name lang="en">{{station['callSign']}}</display-name>
+    <display-name lang="en">{{station['callSign_remapped'] or station['callSign']}}</display-name>
     {%- endif %}
     {%- if station['name'] %}
     <display-name lang="en">{{station['name']}}</display-name>
     {%- endif %}
     {%- if station['channel'] %}
-    <display-name lang="en">{{station['channel']}}</display-name>
+    <display-name lang="en">{{station['channel_remapped'] or station['channel']}}</display-name>
     {%- endif %}
     {%- if station['id'] %}
     <display-name lang="en">{{station['id']}}</display-name>

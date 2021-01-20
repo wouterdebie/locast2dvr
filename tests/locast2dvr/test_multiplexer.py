@@ -116,9 +116,8 @@ class TestMultiPlexer(unittest.TestCase):
         mp = create_multiplexer(self.config, 6077, MagicMock())
         mp.dvrs = [dvr1]
         stations = mp.get_stations()
-
+        
         remap.assert_called_with(station, 0)
-        self.assertFalse(mp.config.remap)
 
     def test_get_station_stream_uri(self):
         mp = create_multiplexer(self.config, 6077, MagicMock())
