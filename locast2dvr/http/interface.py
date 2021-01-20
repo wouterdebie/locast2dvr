@@ -144,6 +144,18 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         """
         return jsonify(locast_service.get_stations())
 
+    @app.route('/config', methods=['GET'])
+    def output_config() -> Response:
+        """Returns the Electronic Programming Guide in json format
+
+        Returns:
+            Response: JSON containing the EPG for this DMA
+        """
+        c = dict(config)
+        c['password'] = "*********"
+        print(config)
+        return jsonify(c)
+
     @app.template_filter()
     def format_date(value: int) -> str:
         """Convert an epoch timestamp to YYYYmmdd
