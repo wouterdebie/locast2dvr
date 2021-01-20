@@ -1,6 +1,7 @@
 import logging
 import re
 import subprocess
+import threading
 from datetime import datetime, timedelta
 
 from flask import Flask, Response, jsonify, redirect, request
@@ -289,11 +290,32 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         uri = locast_service.get_station_stream_uri(channel_id)
 
         ffmpeg = config.ffmpeg or 'ffmpeg'
+
         # Start ffmpeg as a subprocess to extract the mpeg stream and copy it to the incoming
-        # connection. ffmpeg will take care of demuxing the mpegts stream
+        # connection. ffmpeg will take care of demuxing the mpegts stream and following m3u directions
+        ffmpeg_cmd = [ffmpeg, "-i", uri, "-codec",
+                      "copy", "-f", "mpegts", "pipe:1"]
+
         ffmpeg_proc = subprocess.Popen(
-            [ffmpeg, "-i", uri, "-codec", "copy", "-f", "mpegts", "pipe:1"],
-            stdout=subprocess.PIPE)
+            ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        stop_thread = False
+
+        def log_output(stderr, stop):
+            if config.verbose > 0:
+                logger = logging.getLogger("ffmpeg")
+                while not stop():
+                    try:
+                        line = stderr.readline().decode('utf-8').rstrip()
+                        if line != '':
+                            logger.info(line)
+                    except:
+                        pass
+
+        t = threading.Thread(target=log_output, args=(
+            ffmpeg_proc.stderr, lambda: stop_thread))
+        t.setDaemon(True)
+        t.start()
 
         def _stream():
             """Streams n bytes from ffmpeg and terminates the ffmpeg subprocess on exceptions (like client disconnecting)
@@ -307,6 +329,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
                 except:
                     ffmpeg_proc.terminate()
                     ffmpeg_proc.communicate()
+                    stop_thread = True
                     break
 
         return Response(_stream(), content_type='video/mpeg; codecs="avc1.4D401E')

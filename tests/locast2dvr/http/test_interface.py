@@ -140,7 +140,8 @@ class TestInterfaceWatch(unittest.TestCase):
         self.config = Configuration({
             "bind_address": "5.4.3.2",
             "ffmpeg": "ffmpeg_bin",
-            "bytes_per_read": 1024
+            "bytes_per_read": 1024,
+            "verbose": 0
         })
         self.port = 6077
         self.locast_service = MagicMock()
@@ -168,7 +169,7 @@ class TestInterfaceWatch(unittest.TestCase):
         Popen.assert_called_once_with([
             'ffmpeg_bin', '-i', 'http://actual_url',
             '-codec', 'copy', '-f', 'mpegts', 'pipe:1',
-        ], stdout=subprocess.PIPE)
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertIsInstance(response, Response)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content_type,
