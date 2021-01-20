@@ -129,6 +129,7 @@ class TestMultiPlexer(unittest.TestCase):
             "1": locast_service1
         }
         mp.dvrs = [dvr1]
+        mp.get_stations = MagicMock()
         mp.get_station_stream_uri("1")
         locast_service1.get_station_stream_uri.assert_called_with("1")
 

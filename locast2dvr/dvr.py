@@ -141,6 +141,7 @@ class Multiplexer(LoggingHandler):
                     self, self.ssdp, self.log)
         if self.config.remap:
             self.log.warn("Will remap duplicate channels!")
+
         self.log.info(
             f"Started at {self.url}")
 
@@ -156,10 +157,6 @@ class Multiplexer(LoggingHandler):
 
     def get_stations(self) -> list:
         """Get all stations for all registered DVRs
-
-        Args:
-            use_cache (bool, optional): Cache the stations for `cache_time` seconds. Defaults to True.
-            cache_time (str, optional): Seconds before cache is evicted. Defaults to 3600.
 
         Returns:
             list: A list with all station information
@@ -195,6 +192,7 @@ class Multiplexer(LoggingHandler):
         Returns:
             str: URL
         """
+        self.get_stations()
         return self.station_service_mapping[station_id].get_station_stream_uri(station_id)
 
 
