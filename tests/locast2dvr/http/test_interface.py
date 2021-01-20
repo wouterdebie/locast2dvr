@@ -175,6 +175,7 @@ class TestInterfaceWatch(unittest.TestCase):
         self.assertEqual(response.content_type,
                          'video/mpeg; codecs="avc1.4D401E')
 
+    
 
 class TestInterfaceEPGXML(unittest.TestCase):
     def setUp(self) -> None:
@@ -318,3 +319,26 @@ class TestInterfaceLineupStatus(unittest.TestCase):
 
         response = self.client.get('/lineup.post?scan=foo')
         self.assertEqual(response.status_code, 400)
+
+
+class TestConfig(unittest.TestCase):
+    def setUp(self) -> None:
+        self.config = Configuration({
+            "bind_address": "5.4.3.2",
+            "password": "foo"
+        })
+        self.port = 6077
+        self.locast_service = MagicMock()
+
+    def test_lineup_status(self):
+        app = HTTPInterface(self.config, self.port,
+                            "TEST_UID", self.locast_service)
+        self.client = app.test_client()
+        json_data = self.client.get('/config').data.decode('utf-8')
+        data = json.loads(json_data)
+
+        expected = {
+            "bind_address": "5.4.3.2",
+            "password": "*********"
+        }
+        self.assertEqual(data, expected)
