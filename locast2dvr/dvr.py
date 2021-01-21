@@ -178,6 +178,7 @@ class Multiplexer(LoggingHandler):
 
         if self.config.remap_by_name:
               stations = _remap_by_name(stations)
+              self.config.remap_by_name = False
         
         self.log.info(
             f"Got {len(stations)} stations from {len(self.dvrs)} DVRs")
