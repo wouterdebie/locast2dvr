@@ -2,6 +2,7 @@ import logging
 import os
 import threading
 import traceback
+import re
 
 import waitress
 from paste.translogger import TransLogger
@@ -10,7 +11,6 @@ from .http import HTTPInterface
 from .locast import Geo, LocastService
 from .ssdp import SSDPServer
 from .utils import Configuration, LoggingHandler
-
 
 class DVR(LoggingHandler):
     def __init__(self, geo: Geo, uid: str, config: Configuration, ssdp: SSDPServer, port: int = None):
@@ -176,6 +176,9 @@ class Multiplexer(LoggingHandler):
                 self.station_service_mapping[str(
                     station['id'])] = d.locast_service
 
+        if self.config.remap_by_name:
+              stations = _remap_by_name(stations)
+        
         self.log.info(
             f"Got {len(stations)} stations from {len(self.dvrs)} DVRs")
 
@@ -203,3 +206,29 @@ def _remap(station: dict, i: int):
         new_channel = str(float(station['channel']) + 100 * i)
 
     return (new_channel, station['callSign'].replace(station['channel'], new_channel))
+
+def _remap_by_name(stations):
+    """Remaps channel numbers based on the callsign and uses subchannels to
+       for each additional.  For example, if the first CBS channel got 5.1,
+       the next encountered one would get 5.2, and so on
+    """
+    callsigns = []
+    callsignSubchannels = {}
+    for station in stations:
+        callsigns.append(re.sub(r'^[0-9. ]+', '', station['callSign']))
+    callsigns = list(set(callsigns))
+    callsigns.sort()
+
+    for item in callsigns:
+        callsignSubchannels[item] = 1
+
+    # remap each of the station's channel numbers and callsigns
+    for station in stations:
+      callsign = re.sub(r'^[0-9. ]+', '', station['callSign'])
+      channel = callsigns.index(callsign) + 1
+      subchannel = callsignSubchannels[callsign]
+      station['channel_remapped'] = "{}.{}".format(channel, subchannel)
+      station['callSign_remapped'] = "{}.{} {}".format(channel, subchannel, callsign)
+      callsignSubchannels[callsign] += 1
+
+    return stations
