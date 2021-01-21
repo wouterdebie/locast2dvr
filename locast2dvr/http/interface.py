@@ -204,7 +204,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             str: String as YYYY-mm-dd HH:MM:SS
         """
-        return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y-%m-%d %H:%M:%S')
+        return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y-%m-%d %H:%M:%S +0000')
 
     @app.template_filter()
     def aspect(value: str) -> str:
@@ -313,7 +313,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
 
         stop_thread = False
 
-        def log_output(stderr, stop):
+        def log_output(stderr, stop):  # pragma: no cover
             if config.verbose > 0:
                 logger = logging.getLogger("ffmpeg")
                 while not stop():
