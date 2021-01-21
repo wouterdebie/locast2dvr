@@ -72,6 +72,9 @@
     {%- elif program['entityType'] != 'Movie' and program['airdate'] %}
     <episode-num system="original-air-date">{{program['airdate']|format_date_iso}}</episode-num>
     {%- endif %}
+    {%- if program['programId'] %}
+    <episode-num system="dd_progid">{{program['programId']}}</episode-num>
+    {%- endif %}
     {%- if program['videoProperties'] %}
     <video>
       <present>yes</present>
@@ -86,10 +89,10 @@
     {%- if program['isNew'] %}
       <new />
     {%- else %}
-      <previously-shown />
+      <previously-shown start="20121129"/>
     {%- endif %}
     {%- if program['rating'] %}
-    <rating>
+    <rating system="VCHIP">
       <value>{{program['rating']}}</value>
     </rating>
     {%- endif %}

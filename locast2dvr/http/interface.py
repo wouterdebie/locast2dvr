@@ -313,7 +313,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
 
         stop_thread = False
 
-        def log_output(stderr, stop):
+        def log_output(stderr, stop):  # pragma: no cover
             if config.verbose > 0:
                 logger = logging.getLogger("ffmpeg")
                 while not stop():
