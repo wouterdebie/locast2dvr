@@ -80,6 +80,7 @@ Misc options:
     -r, --remap                   Remap channel numbers when multiplexing
                                   based on DVR index
 
+    -s, --ssdp TEXT               Enable SSDP (currently broken)
     --logfile FILE                Log file location
   --config FILE                   Read configuration from FILE.
   --help                          Show this message and exit.
