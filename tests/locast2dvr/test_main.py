@@ -191,7 +191,8 @@ class TestUtilities(unittest.TestCase):
 @patch('locast2dvr.main.SSDPServer')
 class TestStart(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = Configuration({'verbose': 0, 'logfile': None})
+        self.config = Configuration(
+            {'verbose': 0, 'logfile': None, 'ssdp': True})
 
     def test_startup_order(self, ssdp_server: MagicMock):
         with patch.multiple('locast2dvr.main.Main', _login=MagicMock(),

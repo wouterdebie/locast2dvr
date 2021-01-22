@@ -35,8 +35,8 @@ class Main(LoggingHandler):
         self._init_multiplexer()
         self._init_dvrs()
         self._check_ffmpeg()
-
-        self.ssdp.start()
+        if self.config.ssdp:
+            self.ssdp.start()
 
         # Start all DVRs
         for dvr in self.dvrs:

@@ -34,6 +34,7 @@ from .utils import Configuration
 @optgroup.group('\nMisc options')
 @optgroup.option('-d', '--days', default=8, show_default=True, help='Amount of days to get EPG data for', metavar='DAYS')
 @optgroup.option('-r', '--remap', is_flag=True, help='Remap channel numbers when multiplexing based on DVR index')
+@optgroup.option('-s', '--ssdp', is_flag=False, help='Enable SSDP (currently broken)')
 @optgroup.option('--logfile', help='Log file location', metavar='FILE')
 @click_config_file.configuration_option()
 def cli(*args, **config):
