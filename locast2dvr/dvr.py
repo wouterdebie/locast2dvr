@@ -112,8 +112,9 @@ def _start_http(config: Configuration, port: int, uid: str, locast_service: Loca
 
     # Register our Flask app and start an SSDPServer for this specific instance
     # on a separate thread
-    ssdp.register('local', f'uuid:{uid}::upnp:rootdevice',
-                  'upnp:rootdevice', f'http://{config.bind_address}:{port}/device.xml')
+    if config.ssdp:
+        ssdp.register('local', f'uuid:{uid}::upnp:rootdevice',
+                      'upnp:rootdevice', f'http://{config.bind_address}:{port}/device.xml')
 
 
 class Multiplexer(LoggingHandler):

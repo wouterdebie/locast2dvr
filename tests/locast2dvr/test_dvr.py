@@ -167,7 +167,8 @@ class TestStartHttp(unittest.TestCase):
         self.config = Configuration({
             'verbose': 0,
             'logfile': None,
-            'bind_address': '1.2.3.4'
+            'bind_address': '1.2.3.4',
+            'ssdp': True
         })
 
     @patch('locast2dvr.dvr.LocastService')
