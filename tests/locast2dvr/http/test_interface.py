@@ -175,7 +175,6 @@ class TestInterfaceWatch(unittest.TestCase):
         self.assertEqual(response.content_type,
                          'video/mpeg; codecs="avc1.4D401E')
 
-    
 
 class TestInterfaceEPGXML(unittest.TestCase):
     def setUp(self) -> None:
@@ -195,6 +194,7 @@ class TestInterfaceEPGXML(unittest.TestCase):
                 "name": "NAME1",
                 "callSign": "CALLSIGN1",
                 "city": "Chicago",
+                "timezone": "America/Chicago",
                 "id": "1234",
                 "channel": "1.1",
                 "listings": [
@@ -215,6 +215,7 @@ class TestInterfaceEPGXML(unittest.TestCase):
             {
                 "name": "2.1 NAME2",
                 "city": "Chicago",
+                "timezone": "America/Chicago",
                 "id": "4321",
                 "channel": "2.1",
                 "listings": [
@@ -237,6 +238,7 @@ class TestInterfaceEPGXML(unittest.TestCase):
             {
                 "name": "2.1 NAME2",
                 "city": "Chicago",
+                "timezone": "America/Chicago",
                 "id": "4321",
                 "channel": "2.1",
                 "listings": [

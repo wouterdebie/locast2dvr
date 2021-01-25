@@ -2,6 +2,7 @@ import logging
 import re
 import subprocess
 import threading
+import pytz
 from datetime import datetime, timedelta
 
 from flask import Flask, Response, jsonify, redirect, request
@@ -195,16 +196,19 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y%m%d%H%M%S')
 
     @app.template_filter()
-    def format_time_iso(value: int) -> str:
-        """Return an epoch timestamp to YYYY-mm-dd HH:MM:SS
+    def format_time_local_iso(value: int, timezone: str) -> str:
+        """Return an epoch timestamp to YYYY-mm-dd HH:MM:SS in local timezone
 
         Args:
-            value (str): Epoch timestamp string
+            value (int): Epoch timestamp string
+            timezone (str): Time zone (e.g. America/New_York)
 
         Returns:
             str: String as YYYY-mm-dd HH:MM:SS
         """
-        return (datetime(1970, 1, 1) + timedelta(milliseconds=value)).strftime('%Y-%m-%d %H:%M:%S +0000')
+        datetime_in_utc = datetime(1970, 1, 1) + timedelta(milliseconds=value)
+        datetime_in_local = pytz.timezone(timezone).fromutc(datetime_in_utc)
+        return datetime_in_local.strftime('%Y-%m-%d %H:%M:%S')
 
     @app.template_filter()
     def aspect(value: str) -> str:

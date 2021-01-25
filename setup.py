@@ -16,7 +16,9 @@ install_requires = [
     'requests~=2.24.0',
     'waitress~=1.4.0',
     'Paste~=3.5.0',
-    'tabulate~=0.8.0'
+    'tabulate~=0.8.0',
+    'timezonefinder~=5.1.0',
+    'pytz~=2020.5'
 ]
 
 setup(

@@ -43,6 +43,7 @@ pytest-cov==2.10.1
 python-dateutil==2.8.1
 python-engineio==3.13.2
 python-socketio==4.6.0
+pytz==2020.5
 PyYAML==5.3.1
 readme-renderer==28.0
 requests==2.24.0
@@ -50,9 +51,11 @@ requests-toolbelt==0.9.1
 rfc3986==1.4.0
 six==1.15.0
 smmap==3.0.4
+ssdpy==0.4.1
 stevedore==3.2.2
 tabulate==0.8.7
 termcolor==1.1.0
+timezonefinder==5.1.0
 toml==0.10.1
 tqdm==4.54.0
 twine==3.2.0

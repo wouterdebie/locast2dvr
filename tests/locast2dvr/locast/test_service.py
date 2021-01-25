@@ -364,6 +364,7 @@ class TestGetStations(unittest.TestCase):
 
         service = LocastService(self.config, MagicMock())
         service.city = "Chicago"
+        service.timezone = "America/Chicago"
         service._get_locast_stations = get_locast_stations = MagicMock()
         get_locast_stations.return_value = stations
 
@@ -372,7 +373,8 @@ class TestGetStations(unittest.TestCase):
         expected = [{
             "callSign": "2.1 CBS",
             "channel": "2.1",
-            "city": "Chicago"
+            "city": "Chicago",
+            "timezone": "America/Chicago"
         }]
         get_locast_stations.assert_called()
         self.assertEqual(result, expected)
@@ -392,6 +394,7 @@ class TestGetStations(unittest.TestCase):
         service = LocastService(self.config, MagicMock())
         service.dma = "123"
         service.city = "Chicago"
+        service.timezone = "America/Chicago"
         service._get_locast_stations = get_locast_stations = MagicMock()
         get_locast_stations.return_value = stations
         service._detect_callsign = MagicMock()
@@ -415,13 +418,15 @@ class TestGetStations(unittest.TestCase):
                 "callSign": "CBS",
                 "name": "WLTV1",
                 "channel": "2.1",
-                "city": "Chicago"
+                "city": "Chicago",
+                "timezone": "America/Chicago"
             },
             {
                 'callSign': 'WLTV2',
                 'name': 'NPR',
                 'city': 'Chicago',
-                'channel': '1'
+                'channel': '1',
+                "timezone": "America/Chicago"
             }
         ]
         get_locast_stations.assert_called()
@@ -444,6 +449,7 @@ class TestGetStations(unittest.TestCase):
         service = LocastService(self.config, MagicMock())
         service.dma = "123"
         service.city = "Chicago"
+        service.timezone = "America/Chicago"
         service._get_locast_stations = get_locast_stations = MagicMock()
         get_locast_stations.return_value = stations
         service._detect_callsign = MagicMock()
@@ -458,13 +464,15 @@ class TestGetStations(unittest.TestCase):
                 "callSign": "CBS",
                 "name": "WLTV1",
                 "channel": "1000",
-                "city": "Chicago"
+                "city": "Chicago",
+                "timezone": "America/Chicago"
             },
             {
                 'callSign': 'WLTV2',
                 'name': 'NPR',
                 'city': 'Chicago',
-                'channel': '1001'
+                'channel': '1001',
+                'timezone': "America/Chicago"
             }
         ]
         get_locast_stations.assert_called()
@@ -487,6 +495,7 @@ class TestGetStations(unittest.TestCase):
         service = LocastService(self.config, MagicMock())
         service.dma = "123"
         service.city = "Chicago"
+        service.timezone = "America/Chicago"
         service._get_locast_stations = get_locast_stations = MagicMock()
         get_locast_stations.return_value = stations
         service._detect_callsign = MagicMock()
@@ -499,13 +508,15 @@ class TestGetStations(unittest.TestCase):
                 "callSign": "CBS",
                 "name": "WLTV1",
                 "channel": "1000",
-                "city": "Chicago"
+                "city": "Chicago",
+                "timezone": "America/Chicago"
             },
             {
                 'callSign': 'WLTV2',
                 'name': 'NPR',
                 'city': 'Chicago',
-                'channel': '1001'
+                'channel': '1001',
+                'timezone': 'America/Chicago'
             }
         ]
         get_locast_stations.assert_called()

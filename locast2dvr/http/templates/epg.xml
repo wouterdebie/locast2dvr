@@ -67,7 +67,7 @@
     <episode-num system="xmltv_ns">0.{{program['episodeNumber'] - 1}}.</episode-num>
 
     {%- elif program['genres'] == 'News' or (program['entityType'] != 'Movie' and program['isNew']) %}
-    <episode-num system="original-air-date">{{program['startTime']|format_time_iso}}</episode-num>
+    <episode-num system="original-air-date">{{program['startTime']|format_time_local_iso(station['timezone'])}}</episode-num>
     
     {%- elif program['entityType'] != 'Movie' and program['airdate'] %}
     <episode-num system="original-air-date">{{program['airdate']|format_date_iso}}</episode-num>
@@ -88,8 +88,10 @@
     </audio>
     {%- if program['isNew'] %}
       <new />
+    {%- elif program['airdate'] %}
+      <previously-shown start="{{program['airdate']|format_date_iso}}"/>
     {%- else %}
-      <previously-shown start="20121129"/>
+      <previously-shown />
     {%- endif %}
     {%- if program['rating'] %}
     <rating system="VCHIP">

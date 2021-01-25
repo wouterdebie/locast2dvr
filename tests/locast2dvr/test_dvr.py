@@ -69,6 +69,7 @@ class TestProperties(unittest.TestCase):
         x.city = "City"
         x.zipcode = "11111"
         x.dma = "345"
+        x.timezone = "America/New_York"
         service.return_value = x
         dvr = create_dvr(self.config, port=6077)
 
@@ -76,6 +77,7 @@ class TestProperties(unittest.TestCase):
         self.assertEqual(dvr.zipcode, "11111")
         self.assertEqual(dvr.dma, "345")
         self.assertEqual(dvr.url, "http://1.2.3.4:6077")
+        self.assertEqual(dvr.timezone, "America/New_York")
 
     def test_no_port(self, *args):
         dvr = create_dvr(self.config, port=None)

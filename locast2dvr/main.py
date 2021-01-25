@@ -89,8 +89,8 @@ class Main(LoggingHandler):
 
     def _report(self):
         self.log.info("DVRs:")
-        header = ["City", "Zipcode", "DMA", "UID", "URL"]
-        dvrs = [[d.city, d.zipcode, d.dma, d.uid, d.url or "(not listening)"]
+        header = ["City", "Zipcode", "DMA", "UID", "TZ", "URL"]
+        dvrs = [[d.city, d.zipcode, d.dma, d.uid, d.timezone, d.url or "(not listening)"]
                 for d in self.dvrs]
         for l in tabulate(dvrs, header).split("\n"):
             self.log.info(f"  {l}")

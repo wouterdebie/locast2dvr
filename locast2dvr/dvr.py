@@ -46,6 +46,10 @@ class DVR(LoggingHandler):
         return self.locast_service.dma
 
     @property
+    def timezone(self):
+        return self.locast_service.timezone
+
+    @property
     def url(self):
         if self.port:
             return f"http://{self.config.bind_address}:{self.port}"

@@ -8,6 +8,7 @@ import m3u8
 import requests
 from locast2dvr.utils import Configuration, LoggingHandler
 from requests.exceptions import HTTPError
+from timezonefinder import TimezoneFinder
 
 from .fcc import Facilities
 
@@ -75,6 +76,7 @@ class LocastService(LoggingHandler):
         self.active = False
         self.dma = None
         self.city = None
+        self.timezone = None
 
         self._channel_lock = threading.Lock()
 
@@ -207,6 +209,8 @@ class LocastService(LoggingHandler):
         self.dma = str(geo['DMA'])
         self.active = geo['active']
         self.city = geo['name']
+        self.timezone = TimezoneFinder().timezone_at(
+            lng=self.location['longitude'], lat=self.location['latitude'])
 
     def get_stations(self) -> list:
         """Get all station information and return in such a way that PMS can use it
@@ -258,6 +262,7 @@ class LocastService(LoggingHandler):
 
         fake_channel = 1000
         for station in stations:
+            station['timezone'] = self.timezone
             station['city'] = self.city
             # See if station conforms to "X.Y Name"
             m = re.match(r'(\d+\.\d+) .+', station['callSign'])
