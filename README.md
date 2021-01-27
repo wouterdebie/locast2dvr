@@ -72,6 +72,7 @@ Debug options:
     --cache-timeout INTEGER       Time to cache station data in seconds
                                   [default: 3600]
 
+    --http-threads INTEGER        HTTP server threads  [default: 5]
   
 Misc options: 
     -d, --days DAYS               Amount of days to get EPG data for

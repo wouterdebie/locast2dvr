@@ -31,6 +31,7 @@ from .utils import Configuration
 @optgroup.option('--device-version', default='1.2.3456', show_default=True, help='Model version reported to clients')
 @optgroup.option('--cache-stations', default=True, is_flag=True, show_default=True, help='Cache station data')
 @optgroup.option('--cache-timeout', default=3600, show_default=True, help='Time to cache station data in seconds')
+@optgroup.option('--http-threads', default=5, show_default=True, help='HTTP server threads')
 @optgroup.group('\nMisc options')
 @optgroup.option('-d', '--days', default=8, show_default=True, help='Amount of days to get EPG data for', metavar='DAYS')
 @optgroup.option('-r', '--remap', is_flag=True, help='Remap channel numbers when multiplexing based on DVR index')

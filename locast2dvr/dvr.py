@@ -112,6 +112,7 @@ def _start_http(config: Configuration, port: int, uid: str, locast_service: Loca
     threading.Thread(target=waitress.serve, args=(app,),
                      kwargs={'host': config.bind_address,
                              'port': port,
+                             'threads': config.http_threads,
                              '_quiet': True}).start()
 
     # Register our Flask app and start an SSDPServer for this specific instance

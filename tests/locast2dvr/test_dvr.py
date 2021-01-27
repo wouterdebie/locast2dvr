@@ -170,7 +170,8 @@ class TestStartHttp(unittest.TestCase):
             'verbose': 0,
             'logfile': None,
             'bind_address': '1.2.3.4',
-            'ssdp': True
+            'ssdp': True,
+            'http_threads': 5
         })
 
     @patch('locast2dvr.dvr.LocastService')
@@ -197,7 +198,8 @@ class TestStartHttp(unittest.TestCase):
             target=waitress, args=(http_interface_impl,), kwargs={
                 'host': '1.2.3.4',
                 'port': 6666,
-                '_quiet': True
+                '_quiet': True,
+                'threads': 5
             })
         thread.start.assert_called_once()
         ssdp.register.assert_called_once_with(
@@ -236,7 +238,8 @@ class TestStartHttp(unittest.TestCase):
             target=waitress, args=(translogger_app,), kwargs={
                 'host': '1.2.3.4',
                 'port': 6666,
-                '_quiet': True
+                '_quiet': True,
+                'threads': 5
             })
 
     # Slight magic happening here. Since _excepthook is an inner function.
