@@ -1,5 +1,4 @@
 from os import path
-import sys
 
 from setuptools import setup, setuptools
 
