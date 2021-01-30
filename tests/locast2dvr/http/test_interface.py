@@ -26,7 +26,7 @@ class TestHTTPInterface(unittest.TestCase):
         self.locast_service.get_stations.return_value = [
             {
                 "name": "NAME1",
-                "callSign": "CALLSIGN1",
+                "callSign": "CBS",
                 "city": "Chicago",
                 "id": "1234",
                 "channel": "1.1",
@@ -96,11 +96,11 @@ class TestHTTPInterface(unittest.TestCase):
             self.locast_service.get_stations.assert_called()
             expected = (
                 '#EXTM3U\n'
-                '#EXTINF:-1, NAME1 tvg-name="CALLSIGN1 (Chicago)" tvg-id="channel.1234" tvg-chno="1.1"\n'
+                '#EXTINF:-1 tvg-id="channel.1234" tvg-name="CBS (Chicago)" tvg-logo="None" tvg-chno="1.1" group-title="Chicago;Network", CBS (Chicago)\n'
                 'http://5.4.3.2:6077/watch/1234.m3u\n'
                 '\n'
-                '#EXTINF:-1, 2.1 NAME2 tvg-name="NAME2 (Chicago)" tvg-id="channel.4321" tvg-chno="2.1"\n'
-                'http://5.4.3.2:6077/watch/4321.m3u\n'
+                '#EXTINF:-1 tvg-id="channel.4321" tvg-name="NAME2 (Chicago)" tvg-logo="None" tvg-chno="2.1" group-title="Chicago", NAME2 (Chicago)\n'
+                'http://5.4.3.2:6077/watch/4321.m3u\n\n'
             )
 
             expected = expected.lstrip()

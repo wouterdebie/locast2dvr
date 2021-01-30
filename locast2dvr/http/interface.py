@@ -96,16 +96,18 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             Response: m3u in text/plain
         """
-        return "#EXTM3U\n" + "\n".join(
-            [(
-                f"#EXTINF:-1, {station['name']} "
-                f'tvg-name="{name_only(station.get("callSign_remapped") or station.get("callSign") or station.get("name"))} ({station["city"]})" '
-                f'tvg-id="channel.{station["id"]}" '
-                f'tvg-chno="{station.get("channel_remapped") or station["channel"]}"'
-                '\n'
-                f"http://{host_and_port}/watch/{station['id']}.m3u\n"
-            ) for station in locast_service.get_stations()]
-        )
+        m3uText = "#EXTM3U\n"
+        for station in locast_service.get_stations():
+            callsign = name_only(station.get("callSign_remapped") or station.get("callSign") or station.get("name"))
+            city = station["city"]
+            logo = station.get("logoUrl") or station.get("logo226Url")
+            channel = station.get("channel_remapped") or station["channel"]
+            networks = "Network" if callsign in ['ABC', 'CBS', 'NBC', 'FOX', 'CW', 'PBS'] else ""
+            groups = ";".join(filter(None, [city, networks]))
+            url = f"http://{host_and_port}/watch/{station['id']}.m3u"
+            m3uText += f'#EXTINF:-1 tvg-id="channel.{station["id"]}" tvg-name="{callsign} ({city})" tvg-logo="{logo}" tvg-chno="{channel}" group-title="{groups}", {callsign} ({city})\n'
+            m3uText += f'{url}\n\n'
+        return m3uText
 
     @app.template_filter()
     def name_only(value: str) -> str:
