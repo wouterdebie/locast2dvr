@@ -32,7 +32,7 @@ setup(
     py_modules=['locast2dvr'],
     packages=setuptools.find_packages(),
     include_package_data=True,
-    python_requires='~=3.7',
+    python_requires='~=3.6',
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
