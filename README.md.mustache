@@ -18,7 +18,7 @@ I rewrote locast2plex to be able to more easily add functionality, use libraries
 - Provides locast EPG information as an XMLTV guide
 
 ## Prerequisites
-- Python >= 3.7
+- Python >= 3.6
 - An active locast.org account with an active donation. Locast doesn't allow you to stream without a donation.
 - [ffmpeg](https://ffmpeg.org/) installed and available on your `$PATH`.
 
