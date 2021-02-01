@@ -18,13 +18,27 @@ I rewrote locast2plex to be able to more easily add functionality, use libraries
 - Provides locast EPG information as an XMLTV guide
 
 ## Prerequisites
-- Active locast.org account with an active donation. Locast doesn't allow you to stream without a donation.
-- Make sure [ffmpeg](https://ffmpeg.org/) is installed and available on your `$PATH`.
-- locast2dvr requires python >= 3.7
+- Python >= 3.7
+- An active locast.org account with an active donation. Locast doesn't allow you to stream without a donation.
+- [ffmpeg](https://ffmpeg.org/) installed and available on your `$PATH`.
 
-## Install
+
+## Install (global python installation)
 ```sh
-$ pip install `locast2dvr`
+$ pip install locast2dvr
+```
+
+## Install (venv)
+Imho, it's good practice to use a virtual environment when running python applications:
+```sh
+$ python3 -m venv venv
+$ . ./venv/bin/activate
+$ pip install locast2dvr
+```
+
+## Upgrade
+```sh
+$ pip install --upgrade locast2dvr
 ```
 
 ## Usage
