@@ -17,7 +17,8 @@ class TestHTTPInterface(unittest.TestCase):
             "device_version": "1.23.4",
             "bind_address": "5.4.3.2",
             "device_firmware": "DEVICE_FIRMWARE",
-            "tuner_count": 3
+            "tuner_count": 3,
+            "multiplex": False
         })
         port = 6077
         self.locast_service = MagicMock()
@@ -88,9 +89,28 @@ class TestHTTPInterface(unittest.TestCase):
         }
         self.assertEqual(data, expected)
 
-    def test_m3u(self):
-
+    def test_m3u_no_multiplex(self):
         for url in ['/lineup.m3u', '/tuner.m3u']:
+            data = self.client.get(url).data.decode('utf-8')
+
+            self.locast_service.get_stations.assert_called()
+            expected = (
+                '#EXTM3U\n'
+                '#EXTINF:-1 tvg-id="channel.1234" tvg-name="CBS" tvg-logo="None" tvg-chno="1.1" group-title="Chicago;Network", CBS\n'
+                'http://5.4.3.2:6077/watch/1234.m3u\n'
+                '\n'
+                '#EXTINF:-1 tvg-id="channel.4321" tvg-name="NAME2" tvg-logo="None" tvg-chno="2.1" group-title="Chicago", NAME2\n'
+                'http://5.4.3.2:6077/watch/4321.m3u\n\n'
+            )
+
+            expected = expected.lstrip()
+            self.maxDiff = 1000
+            self.assertEqual(data, expected)
+
+    def test_m3u_multiplex(self):
+        self.config.multiplex = True
+        for url in ['/lineup.m3u', '/tuner.m3u']:
+
             data = self.client.get(url).data.decode('utf-8')
 
             self.locast_service.get_stations.assert_called()
