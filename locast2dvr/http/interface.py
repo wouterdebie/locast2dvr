@@ -325,38 +325,58 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         ffmpeg_proc = subprocess.Popen(
             ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        stop_thread = False
+        # use a signal to indicate threads running or not
+        signal = Signal(True)
 
-        def log_output(stderr, stop):  # pragma: no cover
-            if config.verbose > 0:
-                logger = logging.getLogger("ffmpeg")
-                while not stop():
-                    try:
-                        line = stderr.readline().decode('utf-8').rstrip()
-                        if line != '':
-                            logger.info(line)
-                    except:
-                        pass
-
-        t = threading.Thread(target=log_output, args=(
-            ffmpeg_proc.stderr, lambda: stop_thread))
+        # Start a thread that reads ffmpeg stderr and logs it to our logger.
+        t = threading.Thread(target=_log_output, args=(
+            config, ffmpeg_proc.stderr, signal))
         t.setDaemon(True)
         t.start()
 
-        def _stream():
-            """Streams n bytes from ffmpeg and terminates the ffmpeg subprocess on exceptions (like client disconnecting)
-
-            Yields:
-                bytes: raw mpeg bytes from ffmpeg
-            """
-            while True:
-                try:
-                    yield ffmpeg_proc.stdout.read(config.bytes_per_read)
-                except:
-                    ffmpeg_proc.terminate()
-                    ffmpeg_proc.communicate()
-                    stop_thread = True
-                    break
-
-        return Response(_stream(), content_type='video/mpeg; codecs="avc1.4D401E')
+        return Response(_stream(config, ffmpeg_proc, signal), content_type='video/mpeg; codecs="avc1.4D401E')
     return app
+
+
+class Signal:
+    def __init__(self, running: bool) -> None:
+        self._running = running
+
+    def running(self):
+        return self._running
+
+    def stop(self):
+        self._running = False
+
+
+def _stream(config: Configuration, ffmpeg_proc: subprocess.Popen, signal: Signal):
+    """Yields n bytes from ffmpeg and terminates the ffmpeg subprocess on exceptions (like client disconnecting)
+
+    Yields:
+        bytes: raw mpeg bytes from ffmpeg
+    """
+    while True:
+        try:
+            yield ffmpeg_proc.stdout.read(config.bytes_per_read)
+        except:
+            ffmpeg_proc.terminate()
+            ffmpeg_proc.communicate()
+            signal.stop()
+            break
+
+
+def _log_output(config: Configuration, stderr, signal: Signal):
+    if config.verbose > 0:
+        logger = logging.getLogger("ffmpeg")
+        while signal.running():
+            try:
+                line = _readline(stderr)
+                if line != '':
+                    logger.info(line)
+            except:
+                pass
+        logger.debug("Logging thread ended")
+
+
+def _readline(stderr):
+    return stderr.readline().decode('utf-8').rstrip()

@@ -104,7 +104,8 @@ def _start_http(config: Configuration, port: int, uid: str, locast_service: Loca
             log.error(args.exc_value)
             log.error(traceback.print_tb(args.exc_traceback))
             os._exit(-1)
-        print('Unhandled error:', )
+        else:
+            log.error('Unhandled error: ', args)
 
     threading.excepthook = _excepthook
 

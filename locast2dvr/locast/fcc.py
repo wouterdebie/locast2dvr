@@ -37,11 +37,10 @@ class Facilities(LoggingHandler):
     def instance(cls):
 
         # check for the singleton instance
-        if not cls.__singleton_instance:
-            with cls.__singleton_lock:
-                if not cls.__singleton_instance:
-                    cls.__singleton_instance = cls()
-                    cls.__singleton_instance._run()
+        with cls.__singleton_lock:
+            if not cls.__singleton_instance:
+                cls.__singleton_instance = cls()
+                cls.__singleton_instance._run()
 
         # return the singleton instance
         return cls.__singleton_instance

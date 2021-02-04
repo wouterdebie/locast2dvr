@@ -245,9 +245,11 @@ UVALDE|TX||122 EAST CALERA ST.||DK30AI|30|UVALDE|US|566.000000|TX|TX||TTL|66||PR
 """
 
 
+@freeze_time("2021-01-01")
 class TestFCCProcess(unittest.TestCase):
 
-    def test_process(self):
+    @freeze_time("2021-01-01")
+    def test_success(self):
         f = create_facility()
         f._map_fcc_to_locast_dma_id = mapper = MagicMock()
         mapper.side_effect = ['1', '2', '3']
@@ -257,7 +259,8 @@ class TestFCCProcess(unittest.TestCase):
         self.assertEqual(list(f._dma_facilities_map.keys()), [
                          ('1', 'WLOO'), ('2', 'KWWT')])
 
-    def test_process_broken_data(self):
+    @freeze_time("2021-01-01")
+    def test_broken_data(self):
         f = create_facility()
         f._map_fcc_to_locast_dma_id = mapper = MagicMock()
         mapper.side_effect = ['1', '2', '3']
@@ -269,6 +272,24 @@ class TestFCCProcess(unittest.TestCase):
         too_long = "ODESSA|TX||1146 19TH ST NW|SUITE 200|KWWT|30|WASHINGTON|US|566.000000|DT|DC|06/16/2009|CDT|84410|08/01/2022|LICEN|20036||M||03/14/2006|8618|8619|||CW|ODESSA-MIDLAND|30|foo|bar|^|"
         with self.assertRaises(Exception):
             f._process(too_long)
+
+    @freeze_time("2050-01-01")
+    def test_licence_expired(self):
+        f = create_facility()
+        f._map_fcc_to_locast_dma_id = mapper = MagicMock()
+
+        f._process(FACILITY_DATA)
+        mapper.assert_not_called()
+        self.assertEqual(len(f._dma_facilities_map), 0)
+
+    @freeze_time("2021-01-01")
+    def test_no_locast_dma(self):
+        f = create_facility()
+        f._map_fcc_to_locast_dma_id = mapper = MagicMock()
+        mapper.side_effect = [None, None, None]
+
+        f._process(FACILITY_DATA)
+        self.assertEqual(len(f._dma_facilities_map), 0)
 
 
 LOCAST_DMAS = [{'id': 512, 'name': 'Baltimore'}, {'id': 501, 'name': 'New York'}, {'id': 527, 'name': 'Indianapolis'}, {'id': 803, 'name': 'Los Angeles'}, {'id': 504, 'name': 'Philadelphia'}, {'id': 623, 'name': 'Dallas'}, {'id': 624, 'name': 'Sioux City'}, {'id': 511, 'name': 'Washington DC'}, {'id': 764, 'name': 'Rapid City'}, {'id': 807, 'name': 'San Francisco'}, {'id': 506, 'name': 'Boston'}, {'id': 602, 'name': 'Chicago'}, {

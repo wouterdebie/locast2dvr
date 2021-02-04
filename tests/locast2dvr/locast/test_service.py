@@ -226,6 +226,10 @@ class TestSetAttrsFromGeo(unittest.TestCase):
 
 @patch('locast2dvr.locast.service.requests')
 class TestServiceClassMethods(unittest.TestCase):
+    def setUp(self) -> None:
+        LocastService.username = None
+        LocastService.password = None
+
     def test_class_variables(self, _):
         self.assertIsInstance(LocastService.log, Logger)
         self.assertIsInstance(LocastService._login_lock,
@@ -252,6 +256,29 @@ class TestServiceClassMethods(unittest.TestCase):
         response.raise_for_status.assert_called_once()
         validate_user.assert_called_once()
         self.assertEqual(LocastService.token, "specialToken")
+
+    @patch('locast2dvr.locast.service.LocastService._validate_user')
+    def test_login_no_credentials(self, validate_user: MagicMock(), requests: MagicMock()):
+        requests.post = post = MagicMock()
+        post.return_value = response = MagicMock()
+        response.json.return_value = {
+            "token": "specialToken"
+        }
+
+        LocastService.login()
+        post.assert_called_once_with(LOGIN_URL,
+                                     json={
+                                         "username": None,
+                                         "password": None
+                                     },
+                                     headers={
+                                         'Content-Type': 'application/json'}
+                                     )
+
+        response.raise_for_status.assert_called_once()
+        validate_user.assert_called_once()
+        self.assertEqual(LocastService.username, None)
+        self.assertEqual(LocastService.password, None)
 
     @patch('locast2dvr.locast.service.LocastService._validate_user')
     def test_login_failed(self, validate_user: MagicMock(), requests: MagicMock()):

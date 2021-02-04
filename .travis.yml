@@ -8,5 +8,5 @@ install:
   - pip install -r requirements.txt
   - pip install --editable .
 script:
-  - pytest -s --verbose --cov=locast2dvr --cov-report term-missing tests
+  - pytest -s --verbose --cov=locast2dvr --cov-branch --cov-report term-missing tests
   - coverage report --fail-under=95

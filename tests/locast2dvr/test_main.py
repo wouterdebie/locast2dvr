@@ -222,6 +222,25 @@ class TestStart(unittest.TestCase):
             ssdp_server.assert_called()
             ssdp_instance.start.assert_called()
 
+    def test_startup_no_ssdp(self, ssdp_server: MagicMock):
+        self.config.ssdp = False
+        with patch.multiple('locast2dvr.main.Main', _login=MagicMock(return_value='New_Key'),
+                            _init_geos=MagicMock(),
+                            _init_multiplexer=MagicMock(),
+                            _init_dvrs=MagicMock(),
+                            _check_ffmpeg=MagicMock(),
+                            _report=MagicMock()):
+            main = Main(self.config)
+
+            dvrs = [MagicMock(), MagicMock()]
+            main.dvrs = dvrs
+            main.multiplexer = MagicMock()
+            ssdp_server.return_value = ssdp_instance = MagicMock()
+
+            main.start()
+
+            ssdp_instance.start.assert_not_called()
+
     def test_startup_with_multiplexer(self, *args):
         with patch.multiple('locast2dvr.main.Main', _login=MagicMock(return_value='New_Key'),
                             _init_geos=MagicMock(),
@@ -236,9 +255,6 @@ class TestStart(unittest.TestCase):
             main.multiplexer = MagicMock()
 
             main.start()
-
-            main.multiplexer.register.assert_called_once_with(dvrs)
-            main.multiplexer.start.assert_called()
 
 
 class TestReport(unittest.TestCase):

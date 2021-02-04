@@ -1,13 +1,14 @@
 import json
 import subprocess
+import types
 import unittest
 from xml.etree import ElementTree
 
 from flask import Flask
 from flask.wrappers import Response
-from locast2dvr.http.interface import HTTPInterface
+from locast2dvr.http.interface import HTTPInterface, Signal, _log_output, _readline, _stream
 from locast2dvr.utils import Configuration
-from mock import MagicMock, patch
+from mock import MagicMock, PropertyMock, patch
 
 
 class TestHTTPInterface(unittest.TestCase):
@@ -155,6 +156,21 @@ class TestHTTPInterface(unittest.TestCase):
         self.assertEqual(json.loads(data), self.locast_service.get_stations())
 
 
+def free_var(val):
+    def nested():
+        return val
+    return nested.__closure__[0]
+
+
+def nested(outer, innerName, **freeVars):
+    if isinstance(outer, (types.FunctionType, types.MethodType)):
+        outer = outer.__getattribute__('__code__')
+    for const in outer.co_consts:
+        if isinstance(const, types.CodeType) and const.co_name == innerName:
+            return types.FunctionType(const, globals(), None, None, tuple(
+                free_var(freeVars[name]) for name in const.co_freevars))
+
+
 class TestInterfaceWatch(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
@@ -177,10 +193,17 @@ class TestInterfaceWatch(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.location, "http://actual_url")
 
+    @patch('locast2dvr.http.interface.Signal')
+    @patch('locast2dvr.http.interface._log_output')
+    @patch('locast2dvr.http.interface._stream')
+    @patch('locast2dvr.http.interface.threading.Thread')
     @patch('locast2dvr.http.interface.subprocess.Popen')
-    def test_watch(self, Popen: MagicMock):
+    def test_watch(self, Popen: MagicMock, Thread: MagicMock, _stream: MagicMock, _log_output: MagicMock, Signal: MagicMock):
         self.locast_service.get_station_stream_uri.return_value = "http://actual_url"
         Popen.return_value = ffmpeg_proc = MagicMock()
+        ffmpeg_proc.stderr = stderr = MagicMock()
+        Thread.return_value = thread = MagicMock()
+        Signal.return_value = signal = MagicMock()
 
         ffmpeg_proc.stdout.read.side_effect = ["a", "b", "c"]
 
@@ -194,6 +217,15 @@ class TestInterfaceWatch(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content_type,
                          'video/mpeg; codecs="avc1.4D401E')
+
+        Thread.assert_called_once_with(target=_log_output, args=({
+            'bind_address': '5.4.3.2',
+            'ffmpeg': 'ffmpeg_bin', 'bytes_per_read': 1024, 'verbose': 0
+        }, stderr, signal))
+        thread.setDaemon.assert_called_once_with(True)
+        thread.start.assert_called()
+
+        _stream.assert_called_once_with(self.config, ffmpeg_proc, signal)
 
 
 class TestInterfaceEPGXML(unittest.TestCase):
@@ -364,3 +396,124 @@ class TestConfig(unittest.TestCase):
             "password": "*********"
         }
         self.assertEqual(data, expected)
+
+
+class TestSignal(unittest.TestCase):
+    def test_init(self):
+        s1 = Signal(True)
+        s2 = Signal(False)
+        self.assertEqual(s1.running(), True)
+        self.assertEqual(s2.running(), False)
+        s1.stop()
+        self.assertEqual(s1.running(), False)
+
+
+class TestLogOutput(unittest.TestCase):
+    def test_no_verbose(self):
+        config = Configuration({
+            'verbose': 0
+        })
+        stderr = MagicMock()
+        signal = MagicMock()
+        signal.running = PropertyMock()
+
+        _log_output(config, stderr, signal)
+
+        stderr.readline.assert_not_called()
+        signal.running.assert_not_called()
+
+    @patch('locast2dvr.http.interface.logging.getLogger')
+    @patch('locast2dvr.http.interface._readline')
+    def test_verbose(self, _readline: MagicMock, getLogger: MagicMock):
+        config = Configuration({
+            'verbose': 1
+        })
+        stderr = MagicMock()
+        signal = MagicMock()
+        signal.running = MagicMock()
+        signal.running.side_effect = [True, True, False]
+        _readline.side_effect = ['foo', '']
+        getLogger.return_value = logger = MagicMock()
+
+        _log_output(config, stderr, signal)
+
+        getLogger.assert_called_once_with("ffmpeg")
+        logger.info.assert_called_once_with("foo")
+        _readline.assert_called_with(stderr)
+        signal.running.assert_called()
+
+    def raise_exception():
+        raise Exception
+
+    @patch('locast2dvr.http.interface.logging.getLogger')
+    @patch('locast2dvr.http.interface._readline')
+    def test_verbose_exception(self, _readline: MagicMock, getLogger: MagicMock):
+        config = Configuration({
+            'verbose': 1
+        })
+        stderr = MagicMock()
+        signal = MagicMock()
+        signal.running = MagicMock()
+        signal.running.side_effect = [True, False]
+        _readline.side_effect = self.raise_exception
+        getLogger.return_value = logger = MagicMock()
+
+        _log_output(config, stderr, signal)
+
+        getLogger.assert_called_once_with("ffmpeg")
+        logger.info.assert_not_called()
+        _readline.assert_called_with(stderr)
+        signal.running.assert_called()
+
+    def test_readline(self):
+        stderr = MagicMock()
+        stderr.readline.return_value = b'\xf0\x9f\x98\x8a foo bar '
+        res = _readline(stderr)
+        self.assertEqual(res, "😊 foo bar")
+
+
+class TestStream(unittest.TestCase):
+    def setUp(self) -> None:
+        self.config = Configuration({
+            'bytes_per_read': 1024
+        })
+
+    def test_stream(self):
+        ffmpeg_proc = MagicMock()
+        ffmpeg_proc.stdout.read = read_mock = MagicMock()
+        signal = Signal(True)
+        read_mock.side_effect = ['foo', 'bar', 'baz']
+
+        s = _stream(self.config, ffmpeg_proc, signal)
+
+        ret = next(s)
+        read_mock.assert_called_with(1024)
+        self.assertEqual(ret, 'foo')
+        ret = next(s)
+        self.assertEqual(ret, 'bar')
+        ret = next(s)
+        self.assertEqual(ret, 'baz')
+        self.assertTrue(signal.running())
+        ffmpeg_proc.terminate.assert_not_called()
+        ffmpeg_proc.communicate.assert_not_called()
+
+    def raise_exception():
+        raise Exception
+
+    def test_stream_exception(self):
+        ffmpeg_proc = MagicMock()
+        ffmpeg_proc.stdout.read = read_mock = MagicMock()
+        signal = Signal(True)
+        read_mock.side_effect = self.raise_exception
+
+        s = _stream(self.config, ffmpeg_proc, signal)
+
+        try:
+            next(s)
+        except StopIteration:
+            pass
+
+        read_mock.assert_called_with(1024)
+
+        ffmpeg_proc.terminate.assert_called()
+        ffmpeg_proc.communicate.assert_called()

@@ -242,6 +242,37 @@ class TestStartHttp(unittest.TestCase):
                 'threads': 5
             })
 
+    @patch('locast2dvr.dvr.LocastService')
+    @patch("locast2dvr.dvr.threading")
+    @patch("locast2dvr.dvr.waitress.serve")
+    @patch("locast2dvr.dvr.HTTPInterface")
+    def test_start_http_nossdp(self, http_interface: MagicMock, waitress: MagicMock,
+                               threading: MagicMock, service: MagicMock):
+        from locast2dvr.dvr import _start_http
+        uid = "DVR_0"
+        port = 6666
+        ssdp = MagicMock()
+        log = MagicMock()
+        http_interface_impl = MagicMock()
+        http_interface.return_value = http_interface_impl
+        self.config.ssdp = False
+
+        thread = MagicMock()
+        threading.Thread.return_value = thread
+        _start_http(self.config, port, uid, service, ssdp, log)
+
+        http_interface.assert_called_once_with(self.config, port, uid, service)
+
+        threading.Thread.assert_called_once_with(
+            target=waitress, args=(http_interface_impl,), kwargs={
+                'host': '1.2.3.4',
+                'port': 6666,
+                '_quiet': True,
+                'threads': 5
+            })
+        thread.start.assert_called_once()
+        ssdp.register.assert_not_called()
+
     # Slight magic happening here. Since _excepthook is an inner function.
     # We take the inner function, but and call it, but this changes the scope where it's called and
     # therefore we need to patch os._exit and traceback in the current scope.
@@ -261,3 +292,17 @@ class TestStartHttp(unittest.TestCase):
         log.error.assert_called()
         tb.print_tb.assert_called()
         exit.assert_called_once_with(-1)
+
+    @patch('tests.locast2dvr.test_dvr.os._exit')
+    @patch('tests.locast2dvr.test_dvr.traceback')
+    def test_except_hook_unhandled(self, tb: MagicMock(), exit: MagicMock()):
+        from locast2dvr.dvr import _start_http
+
+        log = MagicMock()
+        except_hook = nested(_start_http, '_excepthook', log=log)
+        args = MagicMock(exc_type=Exception, exc_value="foo",
+                         exc_traceback="bar")
+
+        except_hook(args)
+        log.error.called_once_with('Unhandled error: ', args)
+        exit.assert_not_called()

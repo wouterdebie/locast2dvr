@@ -1,5 +1,5 @@
 #!/bin/bash
-pytest -s --verbose --cov=locast2dvr --cov-report term-missing tests && \
+pytest -s --verbose --cov=locast2dvr --cov-branch --cov-report term-missing tests && \
 coverage report --fail-under=95 &&
 bump2version --list --commit --tag patch locast2dvr/__init__.py && \
 git push && git push --tags && \
