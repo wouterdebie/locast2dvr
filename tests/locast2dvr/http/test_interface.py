@@ -6,7 +6,8 @@ from xml.etree import ElementTree
 
 from flask import Flask
 from flask.wrappers import Response
-from locast2dvr.http.interface import HTTPInterface, Signal, _log_output, _readline, _stream
+from locast2dvr.http.interface import (HTTPInterface, Signal, _log_output,
+                                       _readline, _stream)
 from locast2dvr.utils import Configuration
 from mock import MagicMock, PropertyMock, patch
 
