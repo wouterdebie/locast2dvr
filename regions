@@ -1,4 +1,7 @@
-Zipcode, City, State
+This file is purely for documentation only. It contains working zip codes for known Locast regions.
+You can use this to override zip codes.
+
+Zip code, City, State
 --------------------
 98101, Seattle, WA
 94102, San Francisco, CA
