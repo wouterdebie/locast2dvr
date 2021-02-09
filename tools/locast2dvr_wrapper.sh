@@ -23,9 +23,9 @@ cd ${SELF_PATH}
 
 if ! test -d venv; then
     export PATH=/usr/local/bin:$PATH
-    python3 -m venv venv
-    . venv/bin/activate
+    python3 -m venv locast2dvr-venv
+    . locast2dvr-venv/bin/activate
 	  pip install locast2dvr
 fi
-. venv/bin/activate
+. locast2dvr-venv/bin/activate
 exec locast2dvr --config ${config}

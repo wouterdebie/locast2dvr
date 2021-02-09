@@ -148,9 +148,9 @@ Note: This type of multiplexing makes sense in Emby, since you can add a single 
 With the lack of Linux distro or MacOS packaging, [this wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) can be used to start `locast2dvr` as a service using `systemd`.
 
 Poor man's daemon:
-- Copy the [wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) to where ever you want locast to reside (e.g. `$HOME/bin/locast2dvr/locast2dvr_wrapper.sh`)
-- Make it executable (`chmod +x $HOME/bin/locast2dvr/locast2dvr_wrapper.sh`)
-- Create a config file (e.g. `$HOME/.locast2dvr/config`)
+- Copy the [wrapper script](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr_wrapper.sh) to where ever you want locast to reside (e.g. `$HOME/.local/bin/locast2dvr_wrapper.sh`)
+- Make it executable (`chmod +x $HOME/.local/bin/locast2dvr_wrapper.sh`)
+- Create a config file (e.g. `$HOME/.config/locast2dvr/config`)
 - Copy [locast2dvr.service](https://github.com/wouterdebie/locast2dvr/blob/main/tools/locast2dvr.service) to `$HOME/.config/systemd/user/locast2dvr.service` and make sure the paths specified in the file are correct.
 - Run `systemctl --user start locast2dvr.service` to start the service
 - Check `/var/log/syslog` if `locast2dvr` is running.
@@ -158,6 +158,11 @@ Poor man's daemon:
 Note that the wrapper script will create a python `venv` and install `locast2dvr` in that virtual environment if the `venv` does not exist.
 
 In order to enable `locast2dvr` at startup, run `systemctl --user enable locast2dvr.service`
+
+Upgrading this installation of locast2dvr can be done by:
+- `cd $HOME/.local/bin`
+- `. ./locast2dvr-venv/bin/activate`
+- `pip install locast2dvr --upgrade`
 
 ## Development
 - Clone this repo
