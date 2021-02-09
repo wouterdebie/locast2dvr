@@ -46,7 +46,8 @@ class Facilities(LoggingHandler):
         return cls.__singleton_instance
 
     def __init__(self):
-        """Provides an interface to FCC 'facilities' that contain information on US TV channels
+        """Provides an interface to FCC 'facilities' that contain information on US TV channels.
+        This class is normally used as a singleton instance.
         """
         super().__init__()
         self._dma_facilities_map = {}
@@ -195,19 +196,28 @@ class Facilities(LoggingHandler):
                         nielsen_dma = facility['nielsen_dma']
                         call_sign = facility['fac_callsign'].split("-")[0]
 
-                        locast_dma_id = self._map_fcc_to_locast_dma_id(
+                        locast_dma_id = self._find_locast_dma_id_by_fcc_dma_name(
                             nielsen_dma)
 
                         if locast_dma_id:
                             key = (locast_dma_id, call_sign)
                             self._dma_facilities_map[key] = facility
 
-    def _map_fcc_to_locast_dma_id(self, fcc_dma: str) -> str:
+    def _find_locast_dma_id_by_fcc_dma_name(self, fcc_dma: str) -> str:
+        """Find a locast dma id from a FCC DMA string
+
+        Args:
+            fcc_dma (str): FCC DMA name
+
+        Returns:
+            str: Locast DMA id
+        """
         if not self._locast_dmas:
             r = requests.get(DMA_URL)
             r.raise_for_status()
             self._locast_dmas = r.json()
 
+        # Test every locast dma name against the FCC name
         for locast_dma in self._locast_dmas:
             # Tampa Bay and Tampa don't match directly, so we force a match
             if locast_dma["id"] == 539:

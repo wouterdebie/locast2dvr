@@ -2,7 +2,7 @@ import unittest
 
 from mock import MagicMock, patch
 
-from locast2dvr.dvr import Multiplexer, _remap
+from locast2dvr.multiplexer import Multiplexer, _remap
 from locast2dvr.utils import Configuration
 
 
@@ -38,7 +38,7 @@ class TestMultiPlexer(unittest.TestCase):
         port = 6077
         ssdp = MagicMock()
 
-        with patch("locast2dvr.dvr._start_http") as http:
+        with patch("locast2dvr.multiplexer.start_http") as http:
             mp = create_multiplexer(self.config, port, ssdp)
             mp.log = MagicMock()
             mp.start()
@@ -52,7 +52,7 @@ class TestMultiPlexer(unittest.TestCase):
         ssdp = MagicMock()
         self.config.remap = True
 
-        with patch("locast2dvr.dvr._start_http") as http:
+        with patch("locast2dvr.multiplexer.start_http") as http:
             mp = create_multiplexer(self.config, port, ssdp)
             mp.log = MagicMock()
             mp.start()
@@ -99,7 +99,7 @@ class TestMultiPlexer(unittest.TestCase):
         expected_stations = [{"id": 1}, {"id": 2}]
         self.assertEqual(stations, expected_stations)
 
-    @patch('locast2dvr.dvr._remap')
+    @patch('locast2dvr.multiplexer._remap')
     def test_get_stations_remap(self, remap: MagicMock()):
         remap.return_value = ("foo", "bar")
 
@@ -116,7 +116,7 @@ class TestMultiPlexer(unittest.TestCase):
         mp = create_multiplexer(self.config, 6077, MagicMock())
         mp.dvrs = [dvr1]
         stations = mp.get_stations()
-        
+
         remap.assert_called_with(station, 0)
 
     def test_get_station_stream_uri(self):

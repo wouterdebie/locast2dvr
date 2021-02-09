@@ -1,14 +1,67 @@
 import logging
+import os
 import re
 import subprocess
 import threading
-import pytz
+import traceback
 from datetime import datetime, timedelta
+from typing import IO
 
+import pytz
+import waitress
 from flask import Flask, Response, jsonify, redirect, request
 from flask.templating import render_template
 from locast2dvr.locast import LocastService
+from locast2dvr.ssdp import SSDPServer
 from locast2dvr.utils import Configuration
+from paste.translogger import TransLogger
+
+
+def start_http(config: Configuration, port: int, uid: str, locast_service: LocastService,
+               ssdp: SSDPServer, log: logging.Logger):
+    """Start the Flask app and serve it
+
+    Args:
+        config (Configuration): Global configuration object
+        port (int): TCP port to listen to
+        uid (str): uid to announce on SSDP
+        locast_service (Service): Locast service bound to the Flask app
+        ssdp (SSDPServer): SSDP server to announce on
+    """
+    # Create a FlaskApp and tie it to the locast_service
+    app = HTTPInterface(config, port, uid, locast_service)
+
+    # Insert logging middle ware if we want verbose access logging
+    if config.verbose > 0:
+        logger = logging.getLogger("HTTPInterface")
+        format = (f'{config.bind_address}:{port} %(REMOTE_ADDR)s - %(REMOTE_USER)s '
+                  '"%(REQUEST_METHOD)s %(REQUEST_URI)s %(HTTP_VERSION)s" '
+                  '%(status)s %(bytes)s "%(HTTP_REFERER)s" "%(HTTP_USER_AGENT)s"')
+        app = TransLogger(
+            app, logger=logger, format=format)
+
+    def _excepthook(args):
+        if args.exc_type == OSError:
+            log.error(args.exc_value)
+            log.error(traceback.print_tb(args.exc_traceback))
+            os._exit(-1)
+        else:
+            log.error('Unhandled error: ', args)
+
+    threading.excepthook = _excepthook
+
+    # Start the Flask app on a separate thread
+    threading.Thread(target=waitress.serve, args=(app,),
+                     kwargs={'host': config.bind_address,
+                             'port': port,
+                             'threads': config.http_threads,
+                             '_quiet': True}).start()
+
+    # Register our Flask app and start an SSDPServer for this specific instance
+    # on a separate thread
+    if config.ssdp:
+        ssdp.register('local', f'uuid:{uid}::upnp:rootdevice',
+                      'upnp:rootdevice', f'http://{config.bind_address}:{port}/device.xml')
 
 
 def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: LocastService, station_scan=False) -> Flask:
@@ -326,7 +379,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # use a signal to indicate threads running or not
-        signal = Signal(True)
+        signal = RunningSignal(True)
 
         # Start a thread that reads ffmpeg stderr and logs it to our logger.
         t = threading.Thread(target=_log_output, args=(
@@ -338,19 +391,35 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
     return app
 
 
-class Signal:
+class RunningSignal:
     def __init__(self, running: bool) -> None:
+        """Class that is used to signal status between logging, ffmpeg and interface threads
+
+        Args:
+            running (bool): Initial state
+        """
         self._running = running
 
-    def running(self):
+    def running(self) -> bool:
+        """Returns if whatever needs to run is running
+
+        Returns:
+            bool: the thing is running
+        """
         return self._running
 
     def stop(self):
+        """Stop runningn
+        """
         self._running = False
 
 
-def _stream(config: Configuration, ffmpeg_proc: subprocess.Popen, signal: Signal):
+def _stream(config: Configuration, ffmpeg_proc: subprocess.Popen, signal: RunningSignal):
     """Yields n bytes from ffmpeg and terminates the ffmpeg subprocess on exceptions (like client disconnecting)
+    Args:
+        config (Configuration): Global locast2dvr config object
+        ffmpeg_proc (subprocess.Popen): FFMPeg process that has been started
+        signal (RunningSignal): Signal used to communicate running status
 
     Yields:
         bytes: raw mpeg bytes from ffmpeg
@@ -365,7 +434,15 @@ def _stream(config: Configuration, ffmpeg_proc: subprocess.Popen, signal: Signal
             break
 
 
-def _log_output(config: Configuration, stderr, signal: Signal):
+def _log_output(config: Configuration, stderr: IO, signal: RunningSignal):
+    """Function that is used in a separate thread to log ffmpeg output
+
+
+    Args:
+        config (Configuration): Global locast2dvr configuration object
+        stderr (IO): Stderr IO that will be logged
+        signal (RunningSignal): Signal used to communicate running status
+    """
     if config.verbose > 0:
         logger = logging.getLogger("ffmpeg")
         while signal.running():
@@ -378,5 +455,13 @@ def _log_output(config: Configuration, stderr, signal: Signal):
         logger.debug("Logging thread ended")
 
 
-def _readline(stderr):
+def _readline(stderr: IO) -> str:
+    """Read a line from stderr
+
+    Args:
+        stderr (IO): Input
+
+    Returns:
+        str: Utf-8 decoded line with newlines stripped
+    """
     return stderr.readline().decode('utf-8').rstrip()

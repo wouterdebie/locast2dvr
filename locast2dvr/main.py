@@ -6,8 +6,9 @@ from tabulate import tabulate
 
 from locast2dvr import __version__ as locast_version
 
-from .dvr import DVR, Multiplexer
+from .dvr import DVR
 from .locast import Geo, LocastService
+from .multiplexer import Multiplexer
 from .ssdp import SSDPServer
 from .utils import Configuration, LoggingHandler
 

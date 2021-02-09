@@ -1,13 +1,16 @@
+# Even though these imports seem unused, we patch them
 import json
+import os
 import subprocess
+import traceback
 import types
 import unittest
 from xml.etree import ElementTree
 
 from flask import Flask
 from flask.wrappers import Response
-from locast2dvr.http.interface import (HTTPInterface, Signal, _log_output,
-                                       _readline, _stream)
+from locast2dvr.http.interface import (HTTPInterface, RunningSignal,
+                                       _log_output, _readline, _stream)
 from locast2dvr.utils import Configuration
 from mock import MagicMock, PropertyMock, patch
 
@@ -194,7 +197,7 @@ class TestInterfaceWatch(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.location, "http://actual_url")
 
-    @patch('locast2dvr.http.interface.Signal')
+    @patch('locast2dvr.http.interface.RunningSignal')
     @patch('locast2dvr.http.interface._log_output')
     @patch('locast2dvr.http.interface._stream')
     @patch('locast2dvr.http.interface.threading.Thread')
@@ -401,8 +404,8 @@ class TestConfig(unittest.TestCase):
 
 class TestSignal(unittest.TestCase):
     def test_init(self):
-        s1 = Signal(True)
-        s2 = Signal(False)
+        s1 = RunningSignal(True)
+        s2 = RunningSignal(False)
         self.assertEqual(s1.running(), True)
         self.assertEqual(s2.running(), False)
         s1.stop()
@@ -482,7 +485,7 @@ class TestStream(unittest.TestCase):
     def test_stream(self):
         ffmpeg_proc = MagicMock()
         ffmpeg_proc.stdout.read = read_mock = MagicMock()
-        signal = Signal(True)
+        signal = RunningSignal(True)
         read_mock.side_effect = ['foo', 'bar', 'baz']
 
         s = _stream(self.config, ffmpeg_proc, signal)
@@ -504,7 +507,7 @@ class TestStream(unittest.TestCase):
     def test_stream_exception(self):
         ffmpeg_proc = MagicMock()
         ffmpeg_proc.stdout.read = read_mock = MagicMock()
-        signal = Signal(True)
+        signal = RunningSignal(True)
         read_mock.side_effect = self.raise_exception
 
         s = _stream(self.config, ffmpeg_proc, signal)
@@ -518,3 +521,148 @@ class TestStream(unittest.TestCase):
 
         ffmpeg_proc.terminate.assert_called()
         ffmpeg_proc.communicate.assert_called()
+
+
+class TestStartHttp(unittest.TestCase):
+    def setUp(self) -> None:
+
+        self.config = Configuration({
+            'verbose': 0,
+            'logfile': None,
+            'bind_address': '1.2.3.4',
+            'ssdp': True,
+            'http_threads': 5
+        })
+
+    @patch('locast2dvr.http.interface.LocastService')
+    @patch("locast2dvr.http.interface.threading")
+    @patch("locast2dvr.http.interface.waitress.serve")
+    @patch("locast2dvr.http.interface.HTTPInterface")
+    def test_start_http(self, http_interface: MagicMock, waitress: MagicMock,
+                        threading: MagicMock, service: MagicMock):
+        from locast2dvr.dvr import start_http
+        uid = "DVR_0"
+        port = 6666
+        ssdp = MagicMock()
+        log = MagicMock()
+        http_interface_impl = MagicMock()
+        http_interface.return_value = http_interface_impl
+
+        thread = MagicMock()
+        threading.Thread.return_value = thread
+        start_http(self.config, port, uid, service, ssdp, log)
+
+        http_interface.assert_called_once_with(self.config, port, uid, service)
+
+        threading.Thread.assert_called_once_with(
+            target=waitress, args=(http_interface_impl,), kwargs={
+                'host': '1.2.3.4',
+                'port': 6666,
+                '_quiet': True,
+                'threads': 5
+            })
+        thread.start.assert_called_once()
+        ssdp.register.assert_called_once_with(
+            'local', 'uuid:DVR_0::upnp:rootdevice', 'upnp:rootdevice', 'http://1.2.3.4:6666/device.xml')
+
+    @patch('locast2dvr.http.interface.TransLogger')
+    @patch('locast2dvr.http.interface.LocastService')
+    @patch("locast2dvr.http.interface.threading")
+    @patch("locast2dvr.http.interface.waitress.serve")
+    @patch("locast2dvr.http.interface.HTTPInterface")
+    def test_start_verbose(self, http_interface: MagicMock, waitress: MagicMock,
+                           threading: MagicMock, service: MagicMock, translogger: MagicMock):
+
+        from locast2dvr.dvr import start_http
+
+        self.config.verbose = 1
+        uid = "DVR_0"
+        port = 6666
+        ssdp = MagicMock()
+        log = MagicMock()
+        http_interface_impl = MagicMock()
+        http_interface.return_value = http_interface_impl
+        translogger_app = MagicMock()
+        translogger.return_value = translogger_app
+        thread = MagicMock()
+        threading.Thread.return_value = thread
+
+        with patch("locast2dvr.dvr.logging.getLogger") as logger:
+            start_http(self.config, port, uid, service, ssdp, log)
+
+        translogger.assert_called_once_with(http_interface_impl,
+                                            logger=logger(),
+                                            format='1.2.3.4:6666 %(REMOTE_ADDR)s - %(REMOTE_USER)s "%(REQUEST_METHOD)s %(REQUEST_URI)s %(HTTP_VERSION)s" %(status)s %(bytes)s "%(HTTP_REFERER)s" "%(HTTP_USER_AGENT)s"')
+
+        threading.Thread.assert_called_once_with(
+            target=waitress, args=(translogger_app,), kwargs={
+                'host': '1.2.3.4',
+                'port': 6666,
+                '_quiet': True,
+                'threads': 5
+            })
+
+    @patch('locast2dvr.http.interface.LocastService')
+    @patch("locast2dvr.http.interface.threading")
+    @patch("locast2dvr.http.interface.waitress.serve")
+    @patch("locast2dvr.http.interface.HTTPInterface")
+    def test_start_http_nossdp(self, http_interface: MagicMock, waitress: MagicMock,
+                               threading: MagicMock, service: MagicMock):
+        from locast2dvr.dvr import start_http
+        uid = "DVR_0"
+        port = 6666
+        ssdp = MagicMock()
+        log = MagicMock()
+        http_interface_impl = MagicMock()
+        http_interface.return_value = http_interface_impl
+        self.config.ssdp = False
+
+        thread = MagicMock()
+        threading.Thread.return_value = thread
+        start_http(self.config, port, uid, service, ssdp, log)
+
+        http_interface.assert_called_once_with(self.config, port, uid, service)
+
+        threading.Thread.assert_called_once_with(
+            target=waitress, args=(http_interface_impl,), kwargs={
+                'host': '1.2.3.4',
+                'port': 6666,
+                '_quiet': True,
+                'threads': 5
+            })
+        thread.start.assert_called_once()
+        ssdp.register.assert_not_called()
+
+    # Slight magic happening here. Since _excepthook is an inner function.
+    # We take the inner function, but and call it, but this changes the scope where it's called and
+    # therefore we need to patch os._exit and traceback in the current scope.
+
+    @patch('tests.locast2dvr.http.test_interface.os._exit')
+    @patch('tests.locast2dvr.http.test_interface.traceback')
+    def test_except_hook(self, tb: MagicMock(), exit: MagicMock()):
+        from locast2dvr.dvr import start_http
+
+        log = MagicMock()
+        except_hook = nested(start_http, '_excepthook', log=log)
+        args = MagicMock(exc_type=OSError, exc_value="foo",
+                         exc_traceback="bar")
+
+        except_hook(args)
+        self.assertEqual(log.error.call_count, 2)
+        log.error.assert_called()
+        tb.print_tb.assert_called()
+        exit.assert_called_once_with(-1)
+
+    @patch('tests.locast2dvr.http.test_interface.os._exit')
+    @patch('tests.locast2dvr.http.test_interface.traceback')
+    def test_except_hook_unhandled(self, tb: MagicMock(), exit: MagicMock()):
+        from locast2dvr.dvr import start_http
+
+        log = MagicMock()
+        except_hook = nested(start_http, '_excepthook', log=log)
+        args = MagicMock(exc_type=Exception, exc_value="foo",
+                         exc_traceback="bar")
+
+        except_hook(args)
+        log.error.called_once_with('Unhandled error: ', args)
+        exit.assert_not_called()

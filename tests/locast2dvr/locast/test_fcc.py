@@ -251,7 +251,7 @@ class TestFCCProcess(unittest.TestCase):
     @freeze_time("2021-01-01")
     def test_success(self):
         f = create_facility()
-        f._map_fcc_to_locast_dma_id = mapper = MagicMock()
+        f._find_locast_dma_id_by_fcc_dma_name = mapper = MagicMock()
         mapper.side_effect = ['1', '2', '3']
 
         f._process(FACILITY_DATA)
@@ -262,7 +262,7 @@ class TestFCCProcess(unittest.TestCase):
     @freeze_time("2021-01-01")
     def test_broken_data(self):
         f = create_facility()
-        f._map_fcc_to_locast_dma_id = mapper = MagicMock()
+        f._find_locast_dma_id_by_fcc_dma_name = mapper = MagicMock()
         mapper.side_effect = ['1', '2', '3']
 
         too_short = "ODESSA|TX||1146 19TH ST NW|SUITE 200|KWWT|30|WASHINGTON|US|566.000000|DT|DC|06/16/2009|CDT|84410|08/01/2022|LICEN|20036||M||03/14/2006|8618|8619|||CW|ODESSA-MIDLAND|30|^|"
@@ -276,7 +276,7 @@ class TestFCCProcess(unittest.TestCase):
     @freeze_time("2050-01-01")
     def test_licence_expired(self):
         f = create_facility()
-        f._map_fcc_to_locast_dma_id = mapper = MagicMock()
+        f._find_locast_dma_id_by_fcc_dma_name = mapper = MagicMock()
 
         f._process(FACILITY_DATA)
         mapper.assert_not_called()
@@ -285,7 +285,7 @@ class TestFCCProcess(unittest.TestCase):
     @freeze_time("2021-01-01")
     def test_no_locast_dma(self):
         f = create_facility()
-        f._map_fcc_to_locast_dma_id = mapper = MagicMock()
+        f._find_locast_dma_id_by_fcc_dma_name = mapper = MagicMock()
         mapper.side_effect = [None, None, None]
 
         f._process(FACILITY_DATA)
@@ -303,7 +303,7 @@ class TestFCCMapFCCToLocastDMA(unittest.TestCase):
         response.json.return_value = LOCAST_DMAS
         f = create_facility()
 
-        self.assertEqual(f._map_fcc_to_locast_dma_id("NEW YORK"), '501')
+        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("NEW YORK"), '501')
         get.assert_called_once()
         self.assertEqual(f._locast_dmas, LOCAST_DMAS)
 
@@ -312,10 +312,10 @@ class TestFCCMapFCCToLocastDMA(unittest.TestCase):
         f._locast_dmas = LOCAST_DMAS
 
         get.assert_not_called()
-        self.assertEqual(f._map_fcc_to_locast_dma_id("TAMPA BAY"), '539')
-        self.assertEqual(f._map_fcc_to_locast_dma_id(
+        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("TAMPA BAY"), '539')
+        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name(
             "BOSTON (MANCHESTER)"), '506')
-        self.assertEqual(f._map_fcc_to_locast_dma_id(
+        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name(
             "MIAMI-FT. LAUDERDALE"), '528')
-        self.assertEqual(f._map_fcc_to_locast_dma_id("TAMPA BAY"), '539')
-        self.assertEqual(f._map_fcc_to_locast_dma_id("NEW ORLEANS"), None)
+        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("TAMPA BAY"), '539')
+        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("NEW ORLEANS"), None)
