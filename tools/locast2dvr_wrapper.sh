@@ -21,7 +21,7 @@ done
 
 cd ${SELF_PATH}
 
-if ! test -d venv; then
+if ! test -d locast2dvr-venv; then
     export PATH=/usr/local/bin:$PATH
     python3 -m venv locast2dvr-venv
     . locast2dvr-venv/bin/activate

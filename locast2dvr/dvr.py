@@ -136,7 +136,7 @@ class Multiplexer(LoggingHandler):
         self.config = config
         self.dvrs = []
         self.city = "Multiplexer"
-        self.uid = f"{config.uid}_MULTI"
+        self.uid = f"{config.uid}"
         self.ssdp = ssdp
         self.url = f"http://{self.config.bind_address}:{self.port}"
 
