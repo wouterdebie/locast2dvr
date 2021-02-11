@@ -4,9 +4,10 @@ import re
 import subprocess
 import threading
 import traceback
+from collections import OrderedDict
 from datetime import datetime, timedelta
 from time import sleep
-from typing import IO, OrderedDict
+from typing import IO
 
 import m3u8
 import pytz
