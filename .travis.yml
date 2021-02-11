@@ -9,4 +9,4 @@ install:
   - pip install --editable .
 script:
   - pytest -s --verbose --cov=locast2dvr --cov-branch --cov-report term-missing tests
-  - coverage report --fail-under=95
+  - coverage report --fail-under=90

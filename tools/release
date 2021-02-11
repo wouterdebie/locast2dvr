@@ -1,6 +1,6 @@
 #!/bin/bash
 pytest -s --verbose --cov=locast2dvr --cov-branch --cov-report term-missing tests && \
-coverage report --fail-under=95 &&
+coverage report --fail-under=90 &&
 bump2version --list --commit --tag patch locast2dvr/__init__.py && \
 git push && git push --tags && \
 rm -rf dist build  && python setup.py sdist bdist_wheel && python -m twine upload dist/*

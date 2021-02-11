@@ -106,12 +106,17 @@ class Main(LoggingHandler):
 
     def _check_ffmpeg(self):
         # Test if we have a valid ffmpeg executable
-        self.config.ffmpeg = distutils.spawn.find_executable(
-            self.config.ffmpeg or 'ffmpeg')
-        if self.config.ffmpeg:
-            self.log.info(f'Using ffmpeg at {self.config.ffmpeg}')
+        if self.config.direct:
+            self.log.info('Direct streaming.. not using ffmpeg')
         else:
-            self.log.warn('ffmpeg not found! Only use as a m3u tuner!')
+            self.config.ffmpeg = distutils.spawn.find_executable(
+                self.config.ffmpeg or 'ffmpeg')
+            if self.config.ffmpeg:
+                self.log.info(f'Using ffmpeg at {self.config.ffmpeg}')
+            else:
+                self.log.warn(
+                    'ffmpeg not found! Falling back to direct streaming..')
+                self.config.direct = True
 
     def _login(self):
         # Login to locast.org. We only have to do this once.

@@ -3,7 +3,7 @@
   <Program>
     <GuideNumber>{{station['channel_remapped'] or station['channel']}}</GuideNumber>
     <GuideName>{{station['name']}}</GuideName>
-    <URL>http://{{url_base}}/watch/{{station['id']}}</URL>
+    <URL>http://{{url_base}}/{{watch}}/{{station['id']}}</URL>
   </Program>
 {% endfor %}
 </Lineup>

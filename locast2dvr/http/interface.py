@@ -5,9 +5,12 @@ import subprocess
 import threading
 import traceback
 from datetime import datetime, timedelta
-from typing import IO
+from time import sleep
+from typing import IO, OrderedDict
 
+import m3u8
 import pytz
+import requests
 import waitress
 from flask import Flask, Response, jsonify, redirect, request
 from flask.templating import render_template
@@ -193,10 +196,12 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             Response: JSON containing the GuideNumber, GuideName and URL for each channel
         """
+        watch = "watch_direct" if config.direct else "watch"
+
         return jsonify([{
             "GuideNumber": station.get('channel_remapped') or station['channel'],
             "GuideName": station['name'],
-            "URL": f"http://{host_and_port}/watch/{station['id']}"
+            "URL": f"http://{host_and_port}/{watch}/{station['id']}"
         } for station in locast_service.get_stations()])
 
     @app.route('/epg', methods=['GET'])
@@ -322,9 +327,11 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             Response: XML containing the GuideNumber, GuideName and URL for each channel
         """
+        watch = "watch_direct" if config.direct else "watch"
         xml = render_template('lineup.xml',
                               stations=locast_service.get_stations(),
-                              url_base=host_and_port).encode("utf-8")
+                              url_base=host_and_port,
+                              watch=watch).encode("utf-8")
         return Response(xml, mimetype='text/xml')
 
     @app.route('/lineup.post', methods=['POST', 'GET'])
@@ -354,7 +361,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         return redirect(locast_service.get_station_stream_uri(channel_id), code=302)
 
     @app.route('/watch/<channel_id>')
-    def watch(channel_id: str) -> Response:
+    def watch_ffmpeg(channel_id: str) -> Response:
         """Stream a channel based on it's ID. The route streams data as long as its connected.
            This method starts ffmpeg and reads n bytes at a time.
 
@@ -387,7 +394,25 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         t.setDaemon(True)
         t.start()
 
-        return Response(_stream(config, ffmpeg_proc, signal), content_type='video/mpeg; codecs="avc1.4D401E')
+        return Response(_stream_ffmpeg(config, ffmpeg_proc, signal), content_type='video/mpeg; codecs="avc1.4D401E')
+
+    @app.route('/watch_direct/<channel_id>')
+    def watch_direct(channel_id: str) -> Response:
+        """Stream a channel based on it's ID. The route streams data as long as its connected.
+           This method starts ffmpeg and reads n bytes at a time.
+
+        Args:
+            channel_id (str): Channel ID
+
+        Returns:
+            Response: HTTP response with content_type 'video/mpeg; codecs="avc1.4D401E"'
+        """
+        log.info(
+            f"Watching channel {channel_id} on {host_and_port} for {locast_service.city} using direct")
+
+        stream_uri = locast_service.get_station_stream_uri(channel_id)
+
+        return Response(_stream_direct(config, stream_uri, log), content_type='video/mpeg; codecs="avc1.4D401E', direct_passthrough=True)
     return app
 
 
@@ -414,7 +439,7 @@ class RunningSignal:
         self._running = False
 
 
-def _stream(config: Configuration, ffmpeg_proc: subprocess.Popen, signal: RunningSignal):
+def _stream_ffmpeg(config: Configuration, ffmpeg_proc: subprocess.Popen, signal: RunningSignal):
     """Yields n bytes from ffmpeg and terminates the ffmpeg subprocess on exceptions (like client disconnecting)
     Args:
         config (Configuration): Global locast2dvr config object
@@ -431,6 +456,136 @@ def _stream(config: Configuration, ffmpeg_proc: subprocess.Popen, signal: Runnin
             ffmpeg_proc.terminate()
             ffmpeg_proc.communicate()
             signal.stop()
+            break
+
+
+def _stream_direct(config: Configuration, stream_uri: str, log: logging.Logger):
+    """Stream direct by parsing the locast m3u8 stream uri, downloading the .ts files (mpeg stream)
+    and yielding them to the connecting client. This function is used as a generator for a
+    Flask Response object.
+
+    Args:
+        config (Configuration): Global locast2dvr config object
+        stream_uri (str): Locast stream location (m3u8 file)
+        log (logging.Logger): Logger to be used for logging
+
+    Yields:
+        bytes: full mpeg clip
+    """
+    # Ordered dict of URI->dict to keep track of what segments we have served
+    # and which we haven't. We do it this way because we load an updated m3u8
+    # every time we have served all known segments, but since timing isn't
+    # synced we could (and want to) encountered segments that we have already
+    # served.
+    segments = OrderedDict()
+    start_time = datetime.utcnow()
+    total_secs_served = 0
+    while True:
+        try:
+            added = 0
+            removed = 0
+            # Update current segments
+            playlist = m3u8.load(stream_uri)
+
+            # Only add new segments to our segments OrderedDict
+            for m3u8_segment in playlist.segments:
+                uri = m3u8_segment.absolute_uri
+                if uri not in segments:
+                    segments[uri] = {
+                        "played": False,
+                        "duration": m3u8_segment.duration
+                    }
+                    log.debug(f"Added {uri} to play queue")
+                    added += 1
+
+                # Update when we have last seen this segment. Used for cleanup
+                segments[uri]["last_seen"] = datetime.utcnow()
+
+            # Clean up list, so we're not iterating a massive list in the future
+            # We transform our OrderedDict into a list, since we can't mutate
+            # the dict when iterating over it.
+            for uri, data in list(segments.items()):
+                # Remove the segment if it has been played and hasn't been updated
+                # in the last 10 seconds (i.e. it wasn't in the last updates).
+                # We have to make sure the segment isn't in the m3u8 file anymore,
+                # because otherwise it will be seen as a new segment.
+                if data["played"] and (datetime.utcnow() - data["last_seen"]).total_seconds() > 10:
+                    log.debug(f"Removed {uri} from play queue")
+                    del segments[uri]
+                    removed += 1
+
+            log.info(f"Added {added} new segments, removed {removed}")
+
+            for uri, data in segments.items():
+                if not data["played"]:
+                    # Download the chunk
+                    chunk = requests.get(uri).content
+
+                    # Mark this chunk as played
+                    # segments[uri]["played"] = True
+                    data['played'] = True
+
+                    # Chunk might have expired, move on to the next one
+                    if not chunk:
+                        continue
+
+                    # Since yielding a chunk happens pretty much instantly and is not
+                    # related to the speed the connecting client consumes the stream,
+                    # we preferrably wait here. If we don't wait, we will be requesting
+                    # the m3u8 file from locast at a high (and unnecessary) rate after
+                    # we're done serving the first 10 chunks.
+                    #
+                    # The duration of a chunk is caputured in the m3u8 data, but since
+                    # we're downloading the clip to serve it to the client as well,
+                    # we need some time, rather than waiting the full `duration` before
+                    # serving the next clip. However, if we would wait a fixed number of
+                    # seconds (say 8 for a 10 second clip), we would drain the queue of
+                    # clips, since the 2 second difference will compound over time.
+                    # E.g. in case there are 10 clips of 10 seconds served and we would
+                    # run 2 seconds ahead with every serving, we'd run out of clips
+                    # after 50 iterations (10*10/2).
+                    #
+                    # In order to counter this effect, we will try to stay ahead of
+                    # locast by a fixed amount of seconds. In order to do this we use
+                    # the following algorithm:
+                    # - We calculate the amount of seconds served to our client
+                    #   (total_secs_served). This is the sum of all the durations taken
+                    #   from the m3u8 playlist of previously served chunks.
+                    # - We calculate the time that has passed since we started to serve
+                    #   the stream (runtime). Since yielding a chunk doesn't take as long
+                    #   as the actual playback time, runtime will be less than
+                    #   total_secs_played.
+                    # - We calculate the target difference between runtime and
+                    #   total_secs_served, which is 50% of the duration of the chunk we're
+                    #   about to serve. In case of a 10 sec chunk, this will be 5 seconds.
+                    # - Then we calculate the actual wait time, which is the
+                    #   total_secs_served - target difference - runtime.
+                    #
+                    # Example:
+                    # - 10 second chunks
+                    # - Total seconds served (before serving the current chunk): 220 sec
+                    # - Total runtime since beginning of this stream: 204
+                    # - Target: 5 seconds ahead of playback in order to account for
+                    #   downloading and processing of the next chunk
+                    # - Wait time: 220 - 5 - 204 = 11 sec
+
+                    duration = data['duration']
+                    runtime = (datetime.utcnow() - start_time).total_seconds()
+                    target_diff = 0.5 * duration
+
+                    if total_secs_served > 0:
+                        wait = total_secs_served - target_diff - runtime
+                    else:
+                        wait = 0
+
+                    log.info(f"Serving {uri} ({duration}s) in, {wait:.2f}s")
+
+                    # We can't wait negative time..
+                    if wait > 0:
+                        sleep(wait)
+                    yield chunk
+                    total_secs_served += duration
+        except:
             break
 
 

@@ -10,9 +10,9 @@ from xml.etree import ElementTree
 from flask import Flask
 from flask.wrappers import Response
 from locast2dvr.http.interface import (HTTPInterface, RunningSignal,
-                                       _log_output, _readline, _stream)
+                                       _log_output, _readline, _stream_ffmpeg)
 from locast2dvr.utils import Configuration
-from mock import MagicMock, PropertyMock, patch
+from mock import MagicMock, PropertyMock, patch, ANY
 
 
 class TestHTTPInterface(unittest.TestCase):
@@ -23,7 +23,8 @@ class TestHTTPInterface(unittest.TestCase):
             "bind_address": "5.4.3.2",
             "device_firmware": "DEVICE_FIRMWARE",
             "tuner_count": 3,
-            "multiplex": False
+            "multiplex": False,
+            "direct": False
         })
         port = 6077
         self.locast_service = MagicMock()
@@ -181,7 +182,8 @@ class TestInterfaceWatch(unittest.TestCase):
             "bind_address": "5.4.3.2",
             "ffmpeg": "ffmpeg_bin",
             "bytes_per_read": 1024,
-            "verbose": 0
+            "verbose": 0,
+            "direct": False
         })
         self.port = 6077
         self.locast_service = MagicMock()
@@ -197,12 +199,26 @@ class TestInterfaceWatch(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.location, "http://actual_url")
 
+    @patch('locast2dvr.http.interface._stream_direct')
+    def test_watch_direct(self, stream_direct: MagicMock):
+        self.config.direct = True
+        self.locast_service.get_station_stream_uri.return_value = actual_url = "http://actual_url"
+
+        response: Response = self.client.get('/watch_direct/1234')
+        self.assertIsInstance(response, Response)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content_type,
+                         'video/mpeg; codecs="avc1.4D401E')
+
+        stream_direct.assert_called_once_with(
+            self.config, actual_url, ANY)
+
     @patch('locast2dvr.http.interface.RunningSignal')
     @patch('locast2dvr.http.interface._log_output')
-    @patch('locast2dvr.http.interface._stream')
+    @patch('locast2dvr.http.interface._stream_ffmpeg')
     @patch('locast2dvr.http.interface.threading.Thread')
     @patch('locast2dvr.http.interface.subprocess.Popen')
-    def test_watch(self, Popen: MagicMock, Thread: MagicMock, _stream: MagicMock, _log_output: MagicMock, Signal: MagicMock):
+    def test_watch_ffmpeg(self, Popen: MagicMock, Thread: MagicMock, stream_ffmpeg: MagicMock, _log_output: MagicMock, Signal: MagicMock):
         self.locast_service.get_station_stream_uri.return_value = "http://actual_url"
         Popen.return_value = ffmpeg_proc = MagicMock()
         ffmpeg_proc.stderr = stderr = MagicMock()
@@ -224,12 +240,14 @@ class TestInterfaceWatch(unittest.TestCase):
 
         Thread.assert_called_once_with(target=_log_output, args=({
             'bind_address': '5.4.3.2',
-            'ffmpeg': 'ffmpeg_bin', 'bytes_per_read': 1024, 'verbose': 0
+            'ffmpeg': 'ffmpeg_bin', 'bytes_per_read': 1024, 'verbose': 0,
+            'direct': False
         }, stderr, signal))
         thread.setDaemon.assert_called_once_with(True)
         thread.start.assert_called()
 
-        _stream.assert_called_once_with(self.config, ffmpeg_proc, signal)
+        stream_ffmpeg.assert_called_once_with(
+            self.config, ffmpeg_proc, signal)
 
 
 class TestInterfaceEPGXML(unittest.TestCase):
@@ -476,7 +494,7 @@ class TestLogOutput(unittest.TestCase):
         self.assertEqual(res, "😊 foo bar")
 
 
-class TestStream(unittest.TestCase):
+class TestStreamFFMpeg(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'bytes_per_read': 1024
@@ -488,7 +506,7 @@ class TestStream(unittest.TestCase):
         signal = RunningSignal(True)
         read_mock.side_effect = ['foo', 'bar', 'baz']
 
-        s = _stream(self.config, ffmpeg_proc, signal)
+        s = _stream_ffmpeg(self.config, ffmpeg_proc, signal)
 
         ret = next(s)
         read_mock.assert_called_with(1024)
@@ -510,7 +528,7 @@ class TestStream(unittest.TestCase):
         signal = RunningSignal(True)
         read_mock.side_effect = self.raise_exception
 
-        s = _stream(self.config, ffmpeg_proc, signal)
+        s = _stream_ffmpeg(self.config, ffmpeg_proc, signal)
 
         try:
             next(s)

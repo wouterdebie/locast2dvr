@@ -313,7 +313,11 @@ class TestReport(unittest.TestCase):
 
 class TestFFMPEG(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = Configuration({'verbose': 0, 'logfile': None})
+        self.config = Configuration({
+            'verbose': 0,
+            'logfile': None,
+            'direct': False
+        })
 
     def test_ffmpeg_default(self):
         self.config.ffmpeg = None
@@ -337,7 +341,7 @@ class TestFFMPEG(unittest.TestCase):
             self.assertEqual(main.config.ffmpeg, '/usr/bin/ffmpeg-test')
             f.assert_called_once_with('/usr/bin/ffmpeg-test')
 
-    def test_no_ffmpeg(self):
+    def test_ffmpeg_missing(self):
         self.config.ffmpeg = None
         with patch('locast2dvr.main.distutils.spawn.find_executable') as f:
             f.return_value = None
@@ -347,6 +351,17 @@ class TestFFMPEG(unittest.TestCase):
             main._check_ffmpeg()
             self.assertEqual(main.config.ffmpeg, None)
             f.assert_called_once_with('ffmpeg')
+
+    def test_direct(self):
+        self.config.direct = True
+        self.config.ffmpeg = None
+        with patch('locast2dvr.main.distutils.spawn.find_executable') as f:
+            main = Main(self.config)
+            main.log = MagicMock()
+
+            main._check_ffmpeg()
+            self.assertEqual(main.config.ffmpeg, None)
+            f.assert_not_called()
 
 
 class TestLogin(unittest.TestCase):
