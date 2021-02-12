@@ -4,12 +4,12 @@ import unittest
 
 from mock import DEFAULT, MagicMock, patch
 
-from locast2dvr.dvr import DVR
+from locast2dvr.tuner import Tuner
 from locast2dvr.utils import Configuration
 
 
-def create_dvr(config, geo=MagicMock(), ssdp=MagicMock(), uid="DVR_0", port=6077):
-    return DVR(geo, uid, config, ssdp, port)
+def create_tuner(config, geo=MagicMock(), ssdp=MagicMock(), uid="Tuner_0", port=6077):
+    return Tuner(geo, uid, config, ssdp, port)
 
 
 def free_var(val):
@@ -27,7 +27,7 @@ def nested(outer, innerName, **freeVars):
                 free_var(freeVars[name]) for name in const.co_freevars))
 
 
-class TestDVR(unittest.TestCase):
+class TestTuner(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
@@ -35,25 +35,25 @@ class TestDVR(unittest.TestCase):
             'bind_address': '1.2.3.4'
         })
 
-    def test_dvr(self):
-        with patch('locast2dvr.dvr.LocastService') as service:
+    def test_tuner(self):
+        with patch('locast2dvr.tuner.LocastService') as service:
             geo = MagicMock()
             uid = MagicMock()
             port = 6077
             ssdp = MagicMock()
 
-            dvr = create_dvr(self.config, geo, ssdp, uid, port)
+            tuner = create_tuner(self.config, geo, ssdp, uid, port)
 
-            self.assertEqual(dvr.geo, geo)
-            self.assertEqual(dvr.uid, uid)
-            self.assertEqual(dvr.config, self.config)
-            self.assertEqual(dvr.port, port)
-            self.assertEqual(dvr.ssdp, ssdp)
+            self.assertEqual(tuner.geo, geo)
+            self.assertEqual(tuner.uid, uid)
+            self.assertEqual(tuner.config, self.config)
+            self.assertEqual(tuner.port, port)
+            self.assertEqual(tuner.ssdp, ssdp)
 
             service.assert_called_once_with(self.config, geo)
 
 
-@patch('locast2dvr.dvr.LocastService')
+@patch('locast2dvr.tuner.LocastService')
 class TestProperties(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
@@ -69,21 +69,21 @@ class TestProperties(unittest.TestCase):
         x.dma = "345"
         x.timezone = "America/New_York"
         service.return_value = x
-        dvr = create_dvr(self.config, port=6077)
+        tuner = create_tuner(self.config, port=6077)
 
-        self.assertEqual(dvr.city, "City")
-        self.assertEqual(dvr.zipcode, "11111")
-        self.assertEqual(dvr.dma, "345")
-        self.assertEqual(dvr.url, "http://1.2.3.4:6077")
-        self.assertEqual(dvr.timezone, "America/New_York")
+        self.assertEqual(tuner.city, "City")
+        self.assertEqual(tuner.zipcode, "11111")
+        self.assertEqual(tuner.dma, "345")
+        self.assertEqual(tuner.url, "http://1.2.3.4:6077")
+        self.assertEqual(tuner.timezone, "America/New_York")
 
     def test_no_port(self, *args):
-        dvr = create_dvr(self.config, port=None)
-        self.assertEqual(dvr.url, None)
+        tuner = create_tuner(self.config, port=None)
+        self.assertEqual(tuner.url, None)
 
 
-@patch('locast2dvr.dvr.LocastService')
-class TestDVRStart(unittest.TestCase):
+@patch('locast2dvr.tuner.LocastService')
+class TestTunerStart(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             'verbose': 0,
@@ -96,42 +96,42 @@ class TestDVRStart(unittest.TestCase):
         uid = MagicMock()
         port = 6099
         ssdp = MagicMock()
-        dvr = create_dvr(self.config, port=port, uid=uid, ssdp=ssdp)
+        tuner = create_tuner(self.config, port=port, uid=uid, ssdp=ssdp)
         log = MagicMock()
-        dvr.log = log
-        with patch("locast2dvr.dvr.start_http") as http:
-            dvr.start()
+        tuner.log = log
+        with patch("locast2dvr.tuner.start_http") as http:
+            tuner.start()
 
             http.assert_called_once_with(
                 self.config, port, uid, service.return_value, ssdp, log
             )
-            dvr.locast_service.start.assert_called()
+            tuner.locast_service.start.assert_called()
 
     def test_start_no_port(self, service):
         service.return_value = MagicMock()
         uid = MagicMock()
         port = None
         ssdp = MagicMock()
-        with patch("locast2dvr.dvr.start_http") as http:
-            dvr = create_dvr(self.config, port=port, uid=uid, ssdp=ssdp)
+        with patch("locast2dvr.tuner.start_http") as http:
+            tuner = create_tuner(self.config, port=port, uid=uid, ssdp=ssdp)
             log = MagicMock()
-            dvr.log = log
+            tuner.log = log
 
-            dvr.start()
+            tuner.start()
             self.assertEqual(http.call_count, 0)
 
-    @patch('locast2dvr.dvr.os._exit')
+    @patch('locast2dvr.tuner.os._exit')
     def test_start_locast_error(self, exit, service):
         service.return_value = MagicMock()
 
-        dvr = create_dvr(self.config, MagicMock())
-        dvr.locast_service.start.side_effect = Exception(
+        tuner = create_tuner(self.config, MagicMock())
+        tuner.locast_service.start.side_effect = Exception(
             "Failed starting locast service")
-        dvr.start()
+        tuner.start()
         exit.assert_called_with(1)
 
 
-@patch('locast2dvr.dvr.LocastService')
+@patch('locast2dvr.tuner.LocastService')
 class TestRepr(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
@@ -146,9 +146,9 @@ class TestRepr(unittest.TestCase):
         x.zipcode = "11111"
         x.dma = "345"
         service.return_value = x
-        dvr = create_dvr(self.config, port=6077)
+        tuner = create_tuner(self.config, port=6077)
         self.assertEqual(str(
-            dvr), "DVR(city: City, zip: 11111, dma: 345, uid: DVR_0, url: http://1.2.3.4:6077)")
+            tuner), "Tuner(city: City, zip: 11111, dma: 345, uid: Tuner_0, url: http://1.2.3.4:6077)")
 
     def test_repr_no_port(self, service):
         x = MagicMock()
@@ -156,6 +156,6 @@ class TestRepr(unittest.TestCase):
         x.zipcode = "11111"
         x.dma = "345"
         service.return_value = x
-        dvr = create_dvr(self.config, port=None)
+        tuner = create_tuner(self.config, port=None)
         self.assertEqual(str(
-            dvr), "DVR(city: City, zip: 11111, dma: 345, uid: DVR_0)")
+            tuner), "Tuner(city: City, zip: 11111, dma: 345, uid: Tuner_0)")

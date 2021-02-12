@@ -4,18 +4,18 @@
 
 This application provides an interface between locast.org and [Plex Media Server (PMS)](https://plex.tv) or [Emby](https://emby.media) by acting like a [HDHomerun](https://www.silicondust.com/) or an m3u Tuner and an XMLTV provider.
 
-`locast2dvr` can imitate one or more DVR tuners and provides geo cloaking across regions.
+`locast2dvr` can imitate one or more digital tuners and provides geo cloaking across regions.
 
 `locast2dvr` is a rewrite of [locast2plex](https://github.com/tgorgdotcom/locast2plex). Thanks to the locast2plex developers for writing it and figuring out how to stitch things together!
 
 I rewrote locast2plex to be able to more easily add functionality, use libraries wherever possible (like HTTP, m3u, starting multiple devices, etc), heavily document, generally write clean code and provide a better user experience (command line argument parsing, automatic download of FCC facilities, etc).
 
-Even though this project started as a locast to PMS interface, it's more focused on integrating locast with Emby, since Emby provides a bit more functionality when it comes to Live TV and DVR (like m3u tuners, XMLTV, etc).
+Even though this project started as a locast to PMS interface, it's more focused on integrating locast with Emby, since Emby provides a bit more functionality when it comes to Live TV and Tuner (like m3u tuners, XMLTV, etc).
 
 ## Features
 - Override your location using zipcode or GPS coordinates
-- Multiple DVR tuners in a single server, either as separate servers or as one (multiplexing)
-- SSDP for easy discovery of DVR devices in PMS or Emby
+- Multiple digital tuners in a single server, either as separate servers or as one (multiplexing)
+- SSDP for easy discovery of Tuner devices in PMS or Emby
 - Acts like either a HDHomerun Tuner or m3u tuner
 - Provides locast EPG information as an XMLTV guide
 
@@ -97,7 +97,7 @@ Misc options:
                                   [default: 8]
 
     -r, --remap                   Remap channel numbers when multiplexing
-                                  based on DVR index
+                                  based on Tuner index
 
     -s, --ssdp TEXT               Enable SSDP (currently broken)
     --logfile FILE                Log file location
@@ -112,7 +112,7 @@ Misc options:
 
 ### Location overrides
 
-By default `locast2dvr` uses your IP address to determine your location, but it also allows you to override the locast.org location you're creating a DVR for. There are 3 mutually exclusive options:
+By default `locast2dvr` uses your IP address to determine your location, but it also allows you to override the locast.org location you're creating a Tuner for. There are 3 mutually exclusive options:
 
 - `override-location`, which takes a `<latitude>,<longitude>` argument. E.g. `--override-location 40.7128,-74.0060` for New York.
 - `override-zipcodes`, which takes a comma separated list of zipcodes as an argument. E.g. `--override-zipcodes 90210,55111` for Los Angeles and Minneapolis.
@@ -138,11 +138,11 @@ Note: PMS supports multiple devices, but does not support multiple Electronic Pr
 
 ### Multiplexing
 
-`locast2dvr` normally starts an HTTP instance for each DVR, starting at `port` (default `6077`). But with the option `--multiplex`, it will start a single HTTP interface multiplexing all DVRs through one interface for both streaming and EPG. Any channels that have the same call sign (like 4.1 ABC) will be deduped.
+`locast2dvr` normally starts an HTTP instance for each Tuner, starting at `port` (default `6077`). But with the option `--multiplex`, it will start a single HTTP interface multiplexing all Tuners through one interface for both streaming and EPG. Any channels that have the same call sign (like 4.1 ABC) will be deduped.
 
 For example: if you use `--multiplex --override-zipcodes=90210,55111`, all channels from both zipcodes will be available, but multiplexed at `localhost:6077`.
 
-In case you still want all HTTP interfaces to start besides the multiplexer, `--multiplex-debug` can be used. This will start the multiplexer the next port after the last DVR.
+In case you still want all HTTP interfaces to start besides the multiplexer, `--multiplex-debug` can be used. This will start the multiplexer the next port after the last Tuner.
 
 For example: if you use `--multiplex --override-zipcodes=90210,55111` it will normally start HTTP interfaces on `127.0.0.1:6077` and `127.0.0.1:6078`. The multiplexer will be started on `127.0.0.1:6079`.
 

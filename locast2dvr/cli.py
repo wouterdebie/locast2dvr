@@ -36,7 +36,7 @@ from .utils import Configuration
 @optgroup.option('--http-threads', default=5, show_default=True, help='HTTP server threads')
 @optgroup.group('\nMisc options')
 @optgroup.option('-d', '--days', default=8, show_default=True, help='Amount of days to get EPG data for', metavar='DAYS')
-@optgroup.option('-r', '--remap', is_flag=True, help='Remap channel numbers when multiplexing based on DVR index')
+@optgroup.option('-r', '--remap', is_flag=True, help='Remap channel numbers when multiplexing based on Tuner index')
 @optgroup.option('-s', '--ssdp', is_flag=False, help='Enable SSDP (currently broken)')
 @optgroup.option('--logfile', help='Log file location', metavar='FILE')
 @click_config_file.configuration_option()

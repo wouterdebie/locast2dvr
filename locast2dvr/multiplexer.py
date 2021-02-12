@@ -1,11 +1,11 @@
-from locast2dvr.dvr import DVR, start_http
+from locast2dvr.tuner import Tuner, start_http
 from locast2dvr.ssdp.server import SSDPServer
 from locast2dvr.utils import Configuration, LoggingHandler
 
 
 class Multiplexer(LoggingHandler):
     def __init__(self, config: Configuration,  port: int, ssdp: SSDPServer):
-        """Object that behaves like a `locast.Service`, but multiplexes multiple DVRs
+        """Object that behaves like a `locast.Service`, but multiplexes multiple Tuners
 
         Args:
             port (int): TCP port to bind to
@@ -14,7 +14,7 @@ class Multiplexer(LoggingHandler):
         super().__init__()
         self.port = port
         self.config = config
-        self.dvrs = []
+        self.tuners = []
         self.city = "Multiplexer"
         self.uid = f"{config.uid}_MULTI"
         self.ssdp = ssdp
@@ -32,18 +32,18 @@ class Multiplexer(LoggingHandler):
         self.log.info(
             f"Started at {self.url}")
 
-    def register(self, dvrs: DVR):
-        """Register DVRs to multiplexer
+    def register(self, tuners: Tuner):
+        """Register Tuners to multiplexer
 
         Args:
-            dvrs ([DVR]): List of DVRs
+            tuners ([Tuner]): List of Tuners
         """
-        for dvr in dvrs:
-            self.log.info(f"Registering {dvr}")
-            self.dvrs.append(dvr)
+        for tuner in tuners:
+            self.log.info(f"Registering {tuner}")
+            self.tuners.append(tuner)
 
     def get_stations(self) -> list:
-        """Get all stations for all registered DVRs
+        """Get all stations for all registered Tuners
 
         Returns:
             list: A list with all station information
@@ -52,7 +52,7 @@ class Multiplexer(LoggingHandler):
         self.station_service_mapping = {}
         stations = []
 
-        for i, d in enumerate(self.dvrs):
+        for i, d in enumerate(self.tuners):
             for station in d.locast_service.get_stations():
                 stations.append(station)
 
@@ -64,7 +64,7 @@ class Multiplexer(LoggingHandler):
                     station['id'])] = d.locast_service
 
         self.log.info(
-            f"Got {len(stations)} stations from {len(self.dvrs)} DVRs")
+            f"Got {len(stations)} stations from {len(self.tuners)} Tuners")
 
         return stations
 
@@ -82,7 +82,7 @@ class Multiplexer(LoggingHandler):
 
 
 def _remap(station: dict, i: int):
-    """Remaps a channel number to one based on the DVR index
+    """Remaps a channel number to one based on the Tuner index
     """
     if station['channel'].isdigit():
         new_channel = str(int(station['channel']) + 100 * i)

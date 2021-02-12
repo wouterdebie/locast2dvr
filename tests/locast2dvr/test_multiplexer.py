@@ -28,7 +28,7 @@ class TestMultiPlexer(unittest.TestCase):
 
         self.assertEqual(mp.port, port)
         self.assertEqual(mp.config, self.config)
-        self.assertEqual(mp.dvrs, [])
+        self.assertEqual(mp.tuners, [])
         self.assertEqual(mp.city, "Multiplexer")
         self.assertEqual(mp.uid, "TEST_MULTI")
         self.assertEqual(mp.ssdp, ssdp)
@@ -60,33 +60,33 @@ class TestMultiPlexer(unittest.TestCase):
             mp.log.warn.assert_called_once()
 
     def test_register(self):
-        dvr1 = MagicMock()
-        dvr2 = MagicMock()
-        dvrs = [dvr1, dvr2]
+        tuner1 = MagicMock()
+        tuner2 = MagicMock()
+        tuners = [tuner1, tuner2]
         mp = create_multiplexer(self.config, 6077, MagicMock())
         mp.log = MagicMock()
-        mp.register(dvrs)
+        mp.register(tuners)
 
-        self.assertEqual(len(mp.dvrs), 2)
+        self.assertEqual(len(mp.tuners), 2)
         self.assertEqual(mp.log.info.call_count, 2)
 
     def test_get_stations(self):
-        dvr1 = MagicMock()
+        tuner1 = MagicMock()
         locast_service1 = MagicMock()
-        dvr1.locast_service = locast_service1
+        tuner1.locast_service = locast_service1
         locast_service1.get_stations.return_value = [{
             "id": 1
         }]
 
-        dvr2 = MagicMock()
+        tuner2 = MagicMock()
         locast_service2 = MagicMock()
-        dvr2.locast_service = locast_service2
+        tuner2.locast_service = locast_service2
         locast_service2.get_stations.return_value = [{
             "id": 2
         }]
 
         mp = create_multiplexer(self.config, 6077, MagicMock())
-        mp.dvrs = [dvr1, dvr2]
+        mp.tuners = [tuner1, tuner2]
 
         stations = mp.get_stations()
 
@@ -103,9 +103,9 @@ class TestMultiPlexer(unittest.TestCase):
     def test_get_stations_remap(self, remap: MagicMock()):
         remap.return_value = ("foo", "bar")
 
-        dvr1 = MagicMock()
+        tuner1 = MagicMock()
         locast_service1 = MagicMock()
-        dvr1.locast_service = locast_service1
+        tuner1.locast_service = locast_service1
         station = MagicMock()
         station.return_value = {
             "id": 1
@@ -114,7 +114,7 @@ class TestMultiPlexer(unittest.TestCase):
         self.config.remap = True
 
         mp = create_multiplexer(self.config, 6077, MagicMock())
-        mp.dvrs = [dvr1]
+        mp.tuners = [tuner1]
         stations = mp.get_stations()
 
         remap.assert_called_with(station, 0)
@@ -122,12 +122,12 @@ class TestMultiPlexer(unittest.TestCase):
     def test_get_station_stream_uri(self):
         mp = create_multiplexer(self.config, 6077, MagicMock())
 
-        dvr1 = MagicMock()
+        tuner1 = MagicMock()
         locast_service1 = MagicMock()
         mp.station_service_mapping = {
             "1": locast_service1
         }
-        mp.dvrs = [dvr1]
+        mp.tuners = [tuner1]
         mp.get_stations = MagicMock()
         mp.get_station_stream_uri("1")
         locast_service1.get_station_stream_uri.assert_called_with("1")

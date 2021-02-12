@@ -6,7 +6,7 @@ from tabulate import tabulate
 
 from locast2dvr import __version__ as locast_version
 
-from .dvr import DVR
+from .tuner import Tuner
 from .locast import Geo, LocastService
 from .multiplexer import Multiplexer
 from .ssdp import SSDPServer
@@ -23,7 +23,7 @@ class Main(LoggingHandler):
 
         self.config = config
         self.geos: list[Geo] = []
-        self.dvrs: list[DVR] = []
+        self.tuners: list[Tuner] = []
         self.multiplexer: Multiplexer = None
         self.ssdp: SSDPServer = None
 
@@ -34,17 +34,17 @@ class Main(LoggingHandler):
         self._init_geos()
 
         self._init_multiplexer()
-        self._init_dvrs()
+        self._init_tuners()
         self._check_ffmpeg()
         if self.config.ssdp:
             self.ssdp.start()
 
-        # Start all DVRs
-        for dvr in self.dvrs:
-            dvr.start()
+        # Start all Tuners
+        for tuner in self.tuners:
+            tuner.start()
 
         if self.multiplexer:
-            self.multiplexer.register(self.dvrs)
+            self.multiplexer.register(self.tuners)
             self.multiplexer.start()
 
         self._report()
@@ -74,12 +74,12 @@ class Main(LoggingHandler):
         else:
             self.multiplexer = None
 
-    def _init_dvrs(self):
-        dvrs = []
+    def _init_tuners(self):
+        tuners = []
         for i, geo in enumerate(self.geos):
-            dvrs.append(DVR(geo, self._uid(i), self.config,
-                            self.ssdp, port=self._port(i)))
-        self.dvrs: list[DVR] = dvrs
+            tuners.append(Tuner(geo, self._uid(i), self.config,
+                                self.ssdp, port=self._port(i)))
+        self.tuners: list[Tuner] = tuners
 
     def _port(self, i: int):
         if (self.config.multiplex and self.config.multiplex_debug) or not self.config.multiplex:
@@ -89,11 +89,11 @@ class Main(LoggingHandler):
         return f"{self.config.uid}_{i}"
 
     def _report(self):
-        self.log.info("DVRs:")
+        self.log.info("Tuners:")
         header = ["City", "Zipcode", "DMA", "UID", "TZ", "URL"]
-        dvrs = [[d.city, d.zipcode, d.dma, d.uid, d.timezone, d.url or "(not listening)"]
-                for d in self.dvrs]
-        for l in tabulate(dvrs, header).split("\n"):
+        tuners = [[d.city, d.zipcode, d.dma, d.uid, d.timezone, d.url or "(not listening)"]
+                  for d in self.tuners]
+        for l in tabulate(tuners, header).split("\n"):
             self.log.info(f"  {l}")
 
         if self.multiplexer:

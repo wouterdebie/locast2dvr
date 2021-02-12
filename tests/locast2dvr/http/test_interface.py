@@ -558,8 +558,8 @@ class TestStartHttp(unittest.TestCase):
     @patch("locast2dvr.http.interface.HTTPInterface")
     def test_start_http(self, http_interface: MagicMock, waitress: MagicMock,
                         threading: MagicMock, service: MagicMock):
-        from locast2dvr.dvr import start_http
-        uid = "DVR_0"
+        from locast2dvr.tuner import start_http
+        uid = "Tuner_0"
         port = 6666
         ssdp = MagicMock()
         log = MagicMock()
@@ -581,7 +581,7 @@ class TestStartHttp(unittest.TestCase):
             })
         thread.start.assert_called_once()
         ssdp.register.assert_called_once_with(
-            'local', 'uuid:DVR_0::upnp:rootdevice', 'upnp:rootdevice', 'http://1.2.3.4:6666/device.xml')
+            'local', 'uuid:Tuner_0::upnp:rootdevice', 'upnp:rootdevice', 'http://1.2.3.4:6666/device.xml')
 
     @patch('locast2dvr.http.interface.TransLogger')
     @patch('locast2dvr.http.interface.LocastService')
@@ -591,10 +591,10 @@ class TestStartHttp(unittest.TestCase):
     def test_start_verbose(self, http_interface: MagicMock, waitress: MagicMock,
                            threading: MagicMock, service: MagicMock, translogger: MagicMock):
 
-        from locast2dvr.dvr import start_http
+        from locast2dvr.tuner import start_http
 
         self.config.verbose = 1
-        uid = "DVR_0"
+        uid = "Tuner_0"
         port = 6666
         ssdp = MagicMock()
         log = MagicMock()
@@ -605,7 +605,7 @@ class TestStartHttp(unittest.TestCase):
         thread = MagicMock()
         threading.Thread.return_value = thread
 
-        with patch("locast2dvr.dvr.logging.getLogger") as logger:
+        with patch("locast2dvr.tuner.logging.getLogger") as logger:
             start_http(self.config, port, uid, service, ssdp, log)
 
         translogger.assert_called_once_with(http_interface_impl,
@@ -626,8 +626,8 @@ class TestStartHttp(unittest.TestCase):
     @patch("locast2dvr.http.interface.HTTPInterface")
     def test_start_http_nossdp(self, http_interface: MagicMock, waitress: MagicMock,
                                threading: MagicMock, service: MagicMock):
-        from locast2dvr.dvr import start_http
-        uid = "DVR_0"
+        from locast2dvr.tuner import start_http
+        uid = "Tuner_0"
         port = 6666
         ssdp = MagicMock()
         log = MagicMock()
@@ -658,7 +658,7 @@ class TestStartHttp(unittest.TestCase):
     @patch('tests.locast2dvr.http.test_interface.os._exit')
     @patch('tests.locast2dvr.http.test_interface.traceback')
     def test_except_hook(self, tb: MagicMock(), exit: MagicMock()):
-        from locast2dvr.dvr import start_http
+        from locast2dvr.tuner import start_http
 
         log = MagicMock()
         except_hook = nested(start_http, '_excepthook', log=log)
@@ -674,7 +674,7 @@ class TestStartHttp(unittest.TestCase):
     @patch('tests.locast2dvr.http.test_interface.os._exit')
     @patch('tests.locast2dvr.http.test_interface.traceback')
     def test_except_hook_unhandled(self, tb: MagicMock(), exit: MagicMock()):
-        from locast2dvr.dvr import start_http
+        from locast2dvr.tuner import start_http
 
         log = MagicMock()
         except_hook = nested(start_http, '_excepthook', log=log)

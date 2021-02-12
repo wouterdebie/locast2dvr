@@ -7,18 +7,18 @@ from .ssdp import SSDPServer
 from .utils import Configuration, LoggingHandler
 
 
-class DVR(LoggingHandler):
+class Tuner(LoggingHandler):
     def __init__(self, geo: Geo, uid: str, config: Configuration, ssdp: SSDPServer, port: int = None):
-        """Representation of a DVR. This class ties a Flask app to a locast.Service
-           and starts an HTTP server on the given port. It also registers the DVR on
+        """Representation of a Tuner. This class ties a Flask app to a locast.Service
+           and starts an HTTP server on the given port. It also registers the Tuner on
            using SSDP to make it easy for PMS to find the device.
 
         Args:
-            geo (locast.Geo): Geo object containing what content this DVR is representing
-            uid (str): Unique identifier of this DVR
+            geo (locast.Geo): Geo object containing what content this Tuner is representing
+            uid (str): Unique identifier of this Tuner
             config (Configuration): global application configuration
             ssdp (SSDPServer): SSDP server instance to register at
-            port (int, optional): TCP port the DVR listens to. Will not listen on TCP when port == 0
+            port (int, optional): TCP port the Tuner listens to. Will not listen on TCP when port == 0
         """
         super().__init__()
         self.geo = geo
@@ -50,7 +50,7 @@ class DVR(LoggingHandler):
             return f"http://{self.config.bind_address}:{self.port}"
 
     def start(self):
-        """Start the DVR 'device'"""
+        """Start the Tuner 'device'"""
         try:
             self.locast_service.start()
             if self.port:
@@ -64,6 +64,6 @@ class DVR(LoggingHandler):
 
     def __repr__(self) -> str:
         if self.port:
-            return f"DVR(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid}, url: {self.url})"
+            return f"Tuner(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid}, url: {self.url})"
         else:
-            return f"DVR(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid})"
+            return f"Tuner(city: {self.city}, zip: {self.zipcode}, dma: {self.dma}, uid: {self.uid})"

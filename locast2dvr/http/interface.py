@@ -69,17 +69,17 @@ def start_http(config: Configuration, port: int, uid: str, locast_service: Locas
 
 
 def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: LocastService, station_scan=False) -> Flask:
-    """Create a Flask app that is used to interface with PMS and acts like a DVR device
+    """Create a Flask app that is used to interface with PMS and acts like a Tuner device
 
     Args:
         config (utils.Configuration): locast2dvr configuration object
         port (int): TCP port this app will be bound to
-        uid (str): Unique ID for this app. PMS uses this to identify DVRs
+        uid (str): Unique ID for this app. PMS uses this to identify Tuners
         locast_service (locast.Service): Locast service object
         station_scan (bool): used for testing only (default: False)
 
     Returns:
-        Flask: A Flask app that can interface with PMS and mimics a DVR device
+        Flask: A Flask app that can interface with PMS and mimics a Tuner device
     """
     log = logging.getLogger("HTTPInterface")
     app = Flask(__name__)
@@ -337,7 +337,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
 
     @app.route('/lineup.post', methods=['POST', 'GET'])
     def lineup_post():
-        """Initiate a rescan of stations for this DVR"""
+        """Initiate a rescan of stations for this Tuner"""
         scan = request.args.get('scan')
         if scan == 'start':
             station_scan = True
