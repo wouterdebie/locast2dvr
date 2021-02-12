@@ -169,13 +169,13 @@ class TestFindLocation(unittest.TestCase):
         set_attrs.assert_called_with(IP_URL)
 
 
-@patch('locast2dvr.locast.service.requests')
+@patch('locast2dvr.locast.service.LocastService.get')
 class TestSetAttrsFromGeo(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({})
 
-    def test_success(self, requests: MagicMock):
-        requests.get.return_value = response = MagicMock()
+    def test_success(self, get: MagicMock):
+        get.return_value = response = MagicMock()
         service = LocastService(self.config, MagicMock())
         response.status_code = 200
         response.json.return_value = {
@@ -191,50 +191,51 @@ class TestSetAttrsFromGeo(unittest.TestCase):
         except LocationInvalidError as e:
             self.fail(e)
 
-        requests.get.assert_called_with(
-            "geo_url", headers={'Content-Type': 'application/json'})
-        response.raise_for_status.assert_called()
+        get.assert_called_with("geo_url")
+
         self.assertEqual(service.location, {"latitude": 1.0, "longitude": 2.0})
         self.assertEqual(service.dma, "123")
         self.assertEqual(service.active, True)
         self.assertEqual(service.city, 'Chicago')
 
-    def test_unknown_geo(self, requests: MagicMock):
-        requests.get.return_value = response = MagicMock()
+    def test_unknown_geo(self, get: MagicMock):
+        get.return_value = response = MagicMock()
         service = LocastService(self.config, MagicMock())
         response.status_code = 204
 
         with self.assertRaises(LocationInvalidError):
             service._set_attrs_from_geo("geo_url")
 
-        requests.get.assert_called_with(
-            "geo_url", headers={'Content-Type': 'application/json'})
-        response.raise_for_status.assert_called()
+        get.assert_called_with("geo_url")
 
-    def test_unknown_http_error(self, requests: MagicMock):
-        requests.get.return_value = response = MagicMock()
+    def test_unknown_http_error(self, get: MagicMock):
+        get.return_value = response = MagicMock()
         service = LocastService(self.config, MagicMock())
-        response.raise_for_status.side_effect = HTTPError
+        get.side_effect = HTTPError
 
         with self.assertRaises(LocationInvalidError):
             service._set_attrs_from_geo("geo_url")
 
-        requests.get.assert_called_with(
-            "geo_url", headers={'Content-Type': 'application/json'})
-        response.raise_for_status.assert_called()
+        get.assert_called_with("geo_url")
 
 
-@patch('locast2dvr.locast.service.requests')
 class TestServiceClassMethods(unittest.TestCase):
     def setUp(self) -> None:
         LocastService.username = None
         LocastService.password = None
 
-    def test_class_variables(self, _):
+    def tearDown(self) -> None:
+        del LocastService.username
+        del LocastService.password
+        if hasattr(LocastService, "token"):
+            del LocastService.token
+
+    def test_class_variables(self):
         self.assertIsInstance(LocastService.log, Logger)
         self.assertIsInstance(LocastService._login_lock,
                               type(threading.Lock()))
 
+    @patch('locast2dvr.locast.service.requests')
     @patch('locast2dvr.locast.service.LocastService._validate_user')
     def test_login_successful(self, validate_user: MagicMock(), requests: MagicMock()):
         requests.post = post = MagicMock()
@@ -257,6 +258,7 @@ class TestServiceClassMethods(unittest.TestCase):
         validate_user.assert_called_once()
         self.assertEqual(LocastService.token, "specialToken")
 
+    @patch('locast2dvr.locast.service.requests')
     @patch('locast2dvr.locast.service.LocastService._validate_user')
     def test_login_no_credentials(self, validate_user: MagicMock(), requests: MagicMock()):
         requests.post = post = MagicMock()
@@ -280,6 +282,7 @@ class TestServiceClassMethods(unittest.TestCase):
         self.assertEqual(LocastService.username, None)
         self.assertEqual(LocastService.password, None)
 
+    @patch('locast2dvr.locast.service.requests')
     @patch('locast2dvr.locast.service.LocastService._validate_user')
     def test_login_failed(self, validate_user: MagicMock(), requests: MagicMock()):
         requests.post = post = MagicMock()
@@ -295,9 +298,10 @@ class TestServiceClassMethods(unittest.TestCase):
             self.assertEqual(LocastService.token, None)
 
     @freeze_time('2021-01-01')
-    def test_validate_user_successful(self, requests: MagicMock()):
+    @patch('locast2dvr.locast.service.LocastService.get')
+    def test_validate_user_successful(self, get: MagicMock()):
         LocastService.token = "locast_token"
-        requests.get = get = MagicMock()
+
         get.return_value = response = MagicMock()
         response.json.return_value = {
             "didDonate": True,
@@ -309,14 +313,11 @@ class TestServiceClassMethods(unittest.TestCase):
         except UserInvalidError as e:
             self.fail(e)
 
-        requests.get.assert_called_once_with(
-            USER_URL, headers={
-                'Content-Type': 'application/json',
-                'authorization': 'Bearer locast_token'})
+        get.assert_called_once_with(USER_URL, authenticated=True)
 
-    def test_validate_user_no_donation(self, requests: MagicMock()):
+    @patch('locast2dvr.locast.service.LocastService.get')
+    def test_validate_user_no_donation(self, get: MagicMock()):
         LocastService.token = "locast_token"
-        requests.get = get = MagicMock()
         get.return_value = response = MagicMock()
         response.json.return_value = {
             "didDonate": False,
@@ -327,9 +328,10 @@ class TestServiceClassMethods(unittest.TestCase):
             LocastService._validate_user()
 
     @freeze_time('2021-02-02')
-    def test_validate_user_donation_expired(self, requests: MagicMock()):
+    @patch('locast2dvr.locast.service.LocastService.get')
+    def test_validate_user_donation_expired(self, get: MagicMock()):
         LocastService.token = "locast_token"
-        requests.get = get = MagicMock()
+
         get.return_value = response = MagicMock()
         response.json.return_value = {
             "didDonate": True,
@@ -552,36 +554,35 @@ class TestGetStations(unittest.TestCase):
 
 
 @freeze_time("2021-01-01")
-@patch('locast2dvr.locast.service.requests')
+@patch('locast2dvr.locast.service.LocastService.get')
 class TestGetLocastStations(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
             "days": 8
         })
 
-    def test_get(self, requests: MagicMock()):
+    def tearDown(self) -> None:
+        del LocastService.token
+
+    def testget(self, get: MagicMock()):
         service = LocastService(self.config, MagicMock())
         service._validate_token = MagicMock()
-        service.token = "TOKEN"
+        LocastService.token = "TOKEN"
         service.dma = "123"
-        requests.get = get = MagicMock()
-        requests.get.return_value = response = MagicMock()
+        get.return_value = response = MagicMock()
         response.json.return_value = ["foo", "bar"]
 
         result = service._get_locast_stations()
 
-        response.raise_for_status.assert_called()
         get.assert_called_once_with(
             f'{STATIONS_URL}/123?startTime=2021-01-01T00:00:00-00:00&hours=192',
-            headers={
-                'Content-Type': 'application/json',
-                'authorization': 'Bearer TOKEN'})
+            authenticated=True)
 
         response.json.assert_called()
         self.assertEqual(result, ["foo", "bar"])
 
 
-@patch('locast2dvr.locast.service.requests')
+@patch('locast2dvr.locast.service.LocastService.get')
 @patch('locast2dvr.locast.service.m3u8')
 class TestStreamUri(unittest.TestCase):
     def setUp(self) -> None:
@@ -589,16 +590,16 @@ class TestStreamUri(unittest.TestCase):
             "days": 8
         })
 
-    def test_get(self, m3u8, requests: MagicMock()):
+    def testget(self, m3u8, get: MagicMock()):
         service = LocastService(self.config, MagicMock())
         service._validate_token = MagicMock()
-        service.token = "TOKEN"
+
         service.location = {
             "latitude": "10.0",
             "longitude": "-34.5"
         }
-        requests.get = get = MagicMock()
-        requests.get.return_value = response = MagicMock()
+
+        get.return_value = response = MagicMock()
         response.json.return_value = {
             "streamUrl": "stream_url"
         }
@@ -608,29 +609,24 @@ class TestStreamUri(unittest.TestCase):
 
         result = service.get_station_stream_uri("1000")
 
-        response.raise_for_status.assert_called()
         get.assert_called_once_with(
             f'{WATCH_URL}/1000/10.0/-34.5',
-            headers={
-                'Content-Type': 'application/json',
-                'authorization': 'Bearer TOKEN',
-                'User-Agent': "curl/7.64.1"})
+            authenticated=True
+        )
 
         response.json.assert_called()
         self.assertEqual(result, "stream_url")
         m3u8.load.assert_called_with("stream_url")
 
-    def test_get_playlist(self, _m3u8, requests: MagicMock()):
+    def test_get_playlist(self, _m3u8, get: MagicMock()):
         service = LocastService(self.config, MagicMock())
         service._validate_token = MagicMock()
-        service.token = "TOKEN"
+        get.return_value = response = MagicMock()
         service.location = {
             "latitude": "10.0",
             "longitude": "-34.5"
         }
-        requests.get = get = MagicMock()
-        requests.get.return_value = response = MagicMock()
-        response.json.return_value = {
+        get.json.return_value = {
             "streamUrl": "http://stream_url/foo"
         }
 
@@ -647,14 +643,39 @@ class TestStreamUri(unittest.TestCase):
         m3u_data.base_uri = "http://stream_url/foo"
         result = service.get_station_stream_uri("1000")
 
-        response.raise_for_status.assert_called()
         get.assert_called_once_with(
             f'{WATCH_URL}/1000/10.0/-34.5',
-            headers={
-                'Content-Type': 'application/json',
-                'authorization': 'Bearer TOKEN',
-                'User-Agent': "curl/7.64.1"})
+            authenticated=True)
 
         response.json.assert_called()
         self.assertEqual(
             result, "http://stream_url/variant/5fq9TaMBBU9Qp87sj8IRbWh7QK01B4b5PNvMbHHcyCmvY2GoVIpufr0oIGBWuT88YgHlZ1zmnMfSC8xXfEy2AvYS1rcvAjmOaxKgKvYM7w7h.m3u8")
+
+
+@patch('locast2dvr.locast.service.requests')
+class TestGet(unittest.TestCase):
+    def tearDown(self) -> None:
+        if hasattr(LocastService, "token"):
+            del LocastService.token
+
+    def test_authenticated(self, requests: MagicMock()):
+        LocastService.token = "token"
+        requests.get.return_value = response = MagicMock()
+
+        r = LocastService.get("url", authenticated=True)
+        self.assertEqual(r, response)
+        response.raise_for_status.assert_called()
+        requests.get.assert_called_once_with("url", headers={
+                                             'Content-Type': 'application/json',
+                                             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36',
+                                             'authorization': 'Bearer token'})
+
+    def test_not_authenticated(self, requests: MagicMock()):
+        requests.get.return_value = response = MagicMock()
+
+        r = LocastService.get("url", authenticated=False)
+        self.assertEqual(r, response)
+        response.raise_for_status.assert_called()
+        requests.get.assert_called_once_with("url", headers={
+                                             'Content-Type': 'application/json',
+                                             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'})

@@ -12,6 +12,7 @@ from timezonefinder import TimezoneFinder
 
 from .fcc import Facilities
 
+
 LOGIN_URL = "https://api.locastnet.org/api/user/login"
 USER_URL = "https://api.locastnet.org/api/user/me"
 DMA_URL = "https://api.locastnet.org/api/watch/dma"
@@ -133,11 +134,7 @@ class LocastService(LoggingHandler):
         Returns:
             bool: True if successful, otherwise False
         """
-
-        r = requests.get(USER_URL, headers={
-            'Content-Type': 'application/json',
-                            'authorization': 'Bearer ' + cls.token})
-        r.raise_for_status()
+        r = cls.get(USER_URL, authenticated=True)
 
         user_info = r.json()
 
@@ -195,8 +192,7 @@ class LocastService(LoggingHandler):
             LocationInvalidError: If the HTTP request fails or if the location is not found
         """
         try:
-            r = requests.get(url, headers={'Content-Type': 'application/json'})
-            r.raise_for_status()
+            r = self.get(url)
         except HTTPError as err:
             raise LocationInvalidError(err)
 
@@ -307,10 +303,8 @@ class LocastService(LoggingHandler):
         """
         self._validate_token()
         start_time = datetime.utcnow().strftime("%Y-%m-%dT00:00:00-00:00")
-        r = requests.get(f'{STATIONS_URL}/{self.dma}?startTime={start_time}&hours={self.config.days * 24}', headers={
-            'Content-Type': 'application/json',
-            'authorization': 'Bearer ' + self.token})
-        r.raise_for_status()
+        url = f'{STATIONS_URL}/{self.dma}?startTime={start_time}&hours={self.config.days * 24}'
+        r = self.get(url, authenticated=True)
 
         return r.json()
 
@@ -344,14 +338,7 @@ class LocastService(LoggingHandler):
         """
         self._validate_token()
         url = f'{WATCH_URL}/{station_id}/{self.location["latitude"]}/{self.location["longitude"]}'
-
-        r = requests.get(
-            url,
-            headers={
-                'Content-Type': 'application/json',
-                'authorization': f'Bearer {self.token}',
-                'User-Agent': "curl/7.64.1"})
-        r.raise_for_status()
+        r = self.get(url, authenticated=True)
 
         # Stream URLs can either be just URLs or m3u8 playlists with multiple resolutions
         stream_url = r.json()["streamUrl"]
@@ -364,3 +351,30 @@ class LocastService(LoggingHandler):
                                  key=lambda pl: pl.stream_info.resolution).pop()
 
         return best_resolution.absolute_uri
+
+    @classmethod
+    def get(cls, url: str, authenticated=False, extra_headers={}):
+        """Utility method for making HTTP GET requests. Note that Locast.token needs
+        to be set when authenticated=True.
+
+        Args:
+            url (str): URL to get
+            authenticated (bool, optional): Use an authenticated request. Defaults to False.
+            extra_headers (dict, optional): Optional additional heades. Defaults to {}.
+
+        Returns:
+            [type]: [description]
+        """
+        headers = {
+            'Content-Type': 'application/json',
+            'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"
+        }
+
+        headers.update(extra_headers)
+
+        if authenticated:
+            headers.update({'authorization': f'Bearer {cls.token}'})
+
+        r = requests.get(url, headers=headers)
+        r.raise_for_status()
+        return r

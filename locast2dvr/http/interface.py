@@ -520,7 +520,7 @@ def _stream_direct(config: Configuration, stream_uri: str, log: logging.Logger):
             for uri, data in segments.items():
                 if not data["played"]:
                     # Download the chunk
-                    chunk = requests.get(uri).content
+                    chunk = LocastService.get(uri).content
 
                     # Mark this chunk as played
                     # segments[uri]["played"] = True
