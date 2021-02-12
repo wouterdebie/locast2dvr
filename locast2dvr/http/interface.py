@@ -528,6 +528,7 @@ def _stream_direct(config: Configuration, stream_uri: str, log: logging.Logger):
 
                     # Chunk might have expired, move on to the next one
                     if not chunk:
+                        log.warn(f"Segment {uri} not available. Skipping..")
                         continue
 
                     # Since yielding a chunk happens pretty much instantly and is not
