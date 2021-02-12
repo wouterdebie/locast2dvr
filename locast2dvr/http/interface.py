@@ -5,7 +5,7 @@ import subprocess
 import threading
 import traceback
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from time import sleep
 from typing import IO
 
@@ -520,7 +520,14 @@ def _stream_direct(config: Configuration, stream_uri: str, log: logging.Logger):
             for uri, data in segments.items():
                 if not data["played"]:
                     # Download the chunk
+                    start_download = datetime.utcnow()
                     chunk = LocastService.get(uri).content
+                    end_download = datetime.utcnow()
+                    if config.verbose >= 1:
+                        download_secs = (
+                            end_download-start_download).total_seconds()
+                        log.info(
+                            f"Downloaded {uri}, time spent: {download_secs:.2f}")
 
                     # Mark this chunk as played
                     # segments[uri]["played"] = True
