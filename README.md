@@ -52,13 +52,11 @@ Usage: locast2dvr [OPTIONS]
 Options:
   -U, --username USERNAME         Locast username  [required]
   -P, --password PASSWORD         Locast password  [required]
-  -u, --uid UID                   Unique identifier of the device  [default:
-                                  LOCAST2DVR]
-
+  -u, --uid UID                   DEPRECATED Unique identifier of the device
   -b, --bind-address IP_ADDR      Bind IP address  [default: 127.0.0.1]
   -p, --port PORT                 Bind TCP port  [default: 6077]
   -v, --verbose                   Enable verbose logging
-  \Stream options: [mutually_exclusive]
+  Stream options: [mutually_exclusive]
     -f, --ffmpeg PATH             Path to ffmpeg binary  [default: ffmpeg]
     -ds, --direct                 Stream directly (without ffmpeg)
   
@@ -99,10 +97,11 @@ Misc options:
     -r, --remap                   Remap channel numbers when multiplexing
                                   based on Tuner index
 
-    -s, --ssdp TEXT               Enable SSDP (currently broken)
+    -s, --ssdp                    Enable SSDP (currently broken)
     --logfile FILE                Log file location
+  --version                       Show the version and exit.
   --config FILE                   Read configuration from FILE.
-  --help                          Show this message and exit.
+  -h, --help                      Show this message and exit.
 
 ```
 

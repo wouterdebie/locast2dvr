@@ -38,7 +38,8 @@ class TestGeo(unittest.TestCase):
 class TestLocastService(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Configuration({
-            "cache_stations": False
+            "cache_stations": False,
+            "uid": "2721c2f0-6f2a-11eb-8001-acde48001122"
         })
 
     def test_init(self):

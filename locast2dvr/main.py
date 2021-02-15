@@ -1,9 +1,11 @@
 import distutils.spawn
 import platform
 import sys
+import uuid
+import os
 
 from tabulate import tabulate
-
+from pathlib import Path
 from locast2dvr import __version__ as locast_version
 
 from .tuner import Tuner
@@ -27,9 +29,18 @@ class Main(LoggingHandler):
         self.tuners: list[Tuner] = []
         self.multiplexer: Multiplexer = None
         self.ssdp: SSDPServer = None
+        self.cache_dir = os.path.join(Path.home(), '.locast2dvr')
 
     def start(self):
         self.ssdp = SSDPServer()
+
+        if self.config.uid:
+            self.log.warn(
+                "--uid is DEPRECATED and will be removed in future versions!")
+
+        self._create_directories()
+
+        self._generate_or_load_uid()
 
         self._login()
         self._init_geos()
@@ -49,6 +60,22 @@ class Main(LoggingHandler):
             self.multiplexer.start()
 
         self._report()
+
+    def _create_directories(self):
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
+
+    def _generate_or_load_uid(self):
+        uid_file = os.path.join(self.cache_dir, 'uid')
+        if os.path.exists(uid_file):
+            with open(uid_file, "r") as f:
+                self.config.uid = f.readline().rstrip()
+            self.log.info(f"UID: {self.config.uid}")
+        else:
+            self.config.uid = str(uuid.uuid1())
+            with open(uid_file, "w") as f:
+                f.write(str(self.config.uid))
+                self.log.info(f"Generated UID: {self.config.uid}")
 
     def _init_geos(self):
         # Create Geo objects based on configuration.
@@ -78,16 +105,13 @@ class Main(LoggingHandler):
     def _init_tuners(self):
         tuners = []
         for i, geo in enumerate(self.geos):
-            tuners.append(Tuner(geo, self._uid(i), self.config,
-                                self.ssdp, port=self._port(i)))
+            tuners.append(
+                Tuner(geo, self.config, self.ssdp, port=self._port(i)))
         self.tuners: list[Tuner] = tuners
 
     def _port(self, i: int):
         if (self.config.multiplex and self.config.multiplex_debug) or not self.config.multiplex:
             return self.config.port + i
-
-    def _uid(self, i):
-        return f"{self.config.uid}_{i}"
 
     def _report(self):
         self.log.info("Tuners:")

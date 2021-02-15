@@ -1,3 +1,5 @@
+import uuid
+
 import click
 import click_config_file
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
@@ -15,7 +17,7 @@ from .utils import Configuration
 ))
 @click.option('-U', '--username', required=True, type=click.STRING, help='Locast username', metavar='USERNAME')
 @click.password_option('-P', '--password', required=True, help='Locast password', metavar='PASSWORD')
-@click.option('-u', '--uid', type=click.STRING, help='Unique identifier of the device', metavar='UID', default="LOCAST2DVR", show_default=True)
+@click.option('-u', '--uid', type=click.STRING, help='DEPRECATED Unique identifier of the device', metavar='UID')
 @click.option('-b', '--bind-address', default="127.0.0.1", show_default=True, help='Bind IP address', metavar='IP_ADDR', )
 @click.option('-p', '--port', default=6077, show_default=True, help='Bind TCP port', metavar='PORT')
 @click.option('-v', '--verbose', count=True, help='Enable verbose logging')

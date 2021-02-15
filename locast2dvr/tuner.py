@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 
 from .http import start_http
 from .locast import Geo, LocastService
@@ -8,7 +9,7 @@ from .utils import Configuration, LoggingHandler
 
 
 class Tuner(LoggingHandler):
-    def __init__(self, geo: Geo, uid: str, config: Configuration, ssdp: SSDPServer, port: int = None):
+    def __init__(self, geo: Geo, config: Configuration, ssdp: SSDPServer, port: int = None):
         """Representation of a Tuner. This class ties a Flask app to a locast.Service
            and starts an HTTP server on the given port. It also registers the Tuner on
            using SSDP to make it easy for PMS to find the device.
@@ -24,7 +25,6 @@ class Tuner(LoggingHandler):
         self.geo = geo
         self.config = config
         self.port = port
-        self.uid = uid
         self.ssdp = ssdp
         self.locast_service = LocastService(self.config, self.geo)
 
@@ -43,6 +43,10 @@ class Tuner(LoggingHandler):
     @property
     def timezone(self):
         return self.locast_service.timezone
+
+    @property
+    def uid(self):
+        return self.locast_service.uid
 
     @property
     def url(self):

@@ -105,7 +105,6 @@ class TestTuners(unittest.TestCase):
         self.config = Configuration({
             'verbose': 0,
             'logfile': None,
-            'uid': 'TEST',
             'multiplex': False,
             'multiplex_debug': False,
             'port': 6077
@@ -118,8 +117,8 @@ class TestTuners(unittest.TestCase):
         main.geos = [g1, g2]
         main._init_tuners()
         self.assertEqual(len(main.tuners), 2)
-        tuner.assert_any_call(g1, 'TEST_0', main.config, main.ssdp, port=6077)
-        tuner.assert_any_call(g1, 'TEST_1', main.config, main.ssdp, port=6078)
+        tuner.assert_any_call(g1, main.config, main.ssdp, port=6077)
+        tuner.assert_any_call(g1, main.config, main.ssdp, port=6078)
 
     def test_tuners_multiplex(self, tuner: MagicMock):
         self.config.multiplex = True
@@ -129,8 +128,8 @@ class TestTuners(unittest.TestCase):
         main.geos = [g1, g2]
         main._init_tuners()
         self.assertEqual(len(main.tuners), 2)
-        tuner.assert_any_call(g1, 'TEST_0', main.config, main.ssdp, port=None)
-        tuner.assert_any_call(g2, 'TEST_1', main.config, main.ssdp, port=None)
+        tuner.assert_any_call(g1, main.config, main.ssdp, port=None)
+        tuner.assert_any_call(g2, main.config, main.ssdp, port=None)
 
     def test_tuners_multiplex_debug(self, tuner: MagicMock):
         self.config.multiplex = True
@@ -141,8 +140,8 @@ class TestTuners(unittest.TestCase):
         main.geos = [g1, g2]
         main._init_tuners()
         self.assertEqual(len(main.tuners), 2)
-        tuner.assert_any_call(g1, 'TEST_0', main.config, main.ssdp, port=6077)
-        tuner.assert_any_call(g1, 'TEST_1', main.config, main.ssdp, port=6078)
+        tuner.assert_any_call(g1, main.config, main.ssdp, port=6077)
+        tuner.assert_any_call(g1, main.config, main.ssdp, port=6078)
 
 
 class TestUtilities(unittest.TestCase):
@@ -180,19 +179,16 @@ class TestUtilities(unittest.TestCase):
         port = main._port(1)
         self.assertEqual(port, 6078)
 
-    def test_uid(self):
-        main = Main(self.config)
-        uid = main._uid(0)
-        self.assertEqual(uid, "TEST_0")
-        uid = main._uid(1)
-        self.assertEqual(uid, "TEST_1")
-
 
 @patch('locast2dvr.main.SSDPServer')
 class TestStart(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = Configuration(
-            {'verbose': 0, 'logfile': None, 'ssdp': True})
+        self.config = Configuration({
+            'verbose': 0,
+            'logfile': None,
+            'ssdp': True,
+            'uid': None
+        })
 
     def test_startup_order(self, ssdp_server: MagicMock):
         with patch.multiple('locast2dvr.main.Main', _login=MagicMock(),
@@ -200,7 +196,8 @@ class TestStart(unittest.TestCase):
                             _init_multiplexer=MagicMock(),
                             _init_tuners=MagicMock(),
                             _check_ffmpeg=MagicMock(),
-                            _report=MagicMock()):
+                            _report=MagicMock(),
+                            _generate_or_load_uid=MagicMock(),):
 
             ssdp_instance = MagicMock()
             ssdp_server.return_value = ssdp_instance
@@ -217,6 +214,7 @@ class TestStart(unittest.TestCase):
             main._init_tuners.assert_called_once()
             main._check_ffmpeg.assert_called_once()
             main._report.assert_called_once()
+            main._generate_or_load_uid.assert_called_once()
             tuner1.start.assert_called_once()
             tuner2.start.assert_called_once()
             ssdp_server.assert_called()

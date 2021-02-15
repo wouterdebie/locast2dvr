@@ -16,7 +16,7 @@ class Multiplexer(LoggingHandler):
         self.config = config
         self.tuners = []
         self.city = "Multiplexer"
-        self.uid = f"{config.uid}_MULTI"
+        self.uid = config.uid
         self.ssdp = ssdp
         self.url = f"http://{self.config.bind_address}:{self.port}"
 

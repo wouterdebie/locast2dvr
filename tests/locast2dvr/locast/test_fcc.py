@@ -68,12 +68,11 @@ class TestFCCLookup(unittest.TestCase):
 
 @freeze_time("2021-01-01")
 @patch('locast2dvr.locast.fcc.os.path.exists')
-@patch('locast2dvr.locast.fcc.os.makedirs')
 @patch('locast2dvr.locast.fcc.os.path.getmtime')
 @patch('locast2dvr.locast.fcc.threading.Timer')
 class TestFCCRun(unittest.TestCase):
-    def test_cache_dir_not_existing(self, timer: MagicMock, getmtime: MagicMock,
-                                    makedirs: MagicMock, exists: MagicMock):
+    def test_cache_file_not_existing(self, timer: MagicMock, getmtime: MagicMock,
+                                     exists: MagicMock):
 
         exists.return_value = False
 
@@ -88,7 +87,6 @@ class TestFCCRun(unittest.TestCase):
 
         f._run()
 
-        makedirs.assert_called_with('/home/user/.locast2dvr')
         download.assert_called()
         process.assert_called()
         unzip.assert_called()
@@ -100,7 +98,7 @@ class TestFCCRun(unittest.TestCase):
         timer_instance.start.assert_called()
 
     def test_file_existing_data_too_old(self, timer: MagicMock, getmtime: MagicMock,
-                                        makedirs: MagicMock, exists: MagicMock):
+                                        exists: MagicMock):
 
         exists.return_value = True
         getmtime.return_value = 1609369200  # 25 hours old
@@ -115,7 +113,6 @@ class TestFCCRun(unittest.TestCase):
 
         f._run()
 
-        makedirs.assert_not_called()
         download.assert_called()
         process.assert_called()
         unzip.assert_called()
@@ -128,7 +125,7 @@ class TestFCCRun(unittest.TestCase):
         timer_instance.start.assert_called()
 
     def test_file_existing_data_not_too_old(self, timer: MagicMock, getmtime: MagicMock,
-                                            makedirs: MagicMock, exists: MagicMock):
+                                            exists: MagicMock):
 
         exists.return_value = True
         getmtime.return_value = 1609477200  # 1 hour old
@@ -143,7 +140,6 @@ class TestFCCRun(unittest.TestCase):
 
         f._run()
 
-        makedirs.assert_not_called()
         download.assert_not_called()
         process.assert_called()
         unzip.assert_called()
@@ -156,7 +152,7 @@ class TestFCCRun(unittest.TestCase):
         timer_instance.start.assert_called()
 
     def test_started_and_data_not_too_old(self, timer: MagicMock, getmtime: MagicMock,
-                                          makedirs: MagicMock, exists: MagicMock):
+                                          exists: MagicMock):
 
         exists.return_value = True
         getmtime.return_value = 1609477200  # 1 hour old
@@ -173,7 +169,6 @@ class TestFCCRun(unittest.TestCase):
 
         f._run()
 
-        makedirs.assert_not_called()
         download.assert_not_called()
         process.assert_not_called()
         unzip.assert_not_called()
@@ -303,7 +298,8 @@ class TestFCCMapFCCToLocastDMA(unittest.TestCase):
         response.json.return_value = LOCAST_DMAS
         f = create_facility()
 
-        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("NEW YORK"), '501')
+        self.assertEqual(
+            f._find_locast_dma_id_by_fcc_dma_name("NEW YORK"), '501')
         get.assert_called_once()
         self.assertEqual(f._locast_dmas, LOCAST_DMAS)
 
@@ -312,10 +308,13 @@ class TestFCCMapFCCToLocastDMA(unittest.TestCase):
         f._locast_dmas = LOCAST_DMAS
 
         get.assert_not_called()
-        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("TAMPA BAY"), '539')
+        self.assertEqual(
+            f._find_locast_dma_id_by_fcc_dma_name("TAMPA BAY"), '539')
         self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name(
             "BOSTON (MANCHESTER)"), '506')
         self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name(
             "MIAMI-FT. LAUDERDALE"), '528')
-        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("TAMPA BAY"), '539')
-        self.assertEqual(f._find_locast_dma_id_by_fcc_dma_name("NEW ORLEANS"), None)
+        self.assertEqual(
+            f._find_locast_dma_id_by_fcc_dma_name("TAMPA BAY"), '539')
+        self.assertEqual(
+            f._find_locast_dma_id_by_fcc_dma_name("NEW ORLEANS"), None)

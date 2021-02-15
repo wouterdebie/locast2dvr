@@ -223,7 +223,6 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         """
         c = dict(config)
         c['password'] = "*********"
-        print(config)
         return jsonify(c)
 
     @app.template_filter()

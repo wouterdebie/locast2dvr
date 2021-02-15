@@ -82,9 +82,6 @@ class Facilities(LoggingHandler):
         """
         data = None
 
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
-
         now = datetime.now().timestamp()
 
         if not os.path.exists(self.cache_file) or now - os.path.getmtime(self.cache_file) > MAX_FILE_AGE:

@@ -8,8 +8,8 @@ from locast2dvr.tuner import Tuner
 from locast2dvr.utils import Configuration
 
 
-def create_tuner(config, geo=MagicMock(), ssdp=MagicMock(), uid="Tuner_0", port=6077):
-    return Tuner(geo, uid, config, ssdp, port)
+def create_tuner(config, geo=MagicMock(), ssdp=MagicMock(), port=6077):
+    return Tuner(geo, config, ssdp, port)
 
 
 def free_var(val):
@@ -38,14 +38,12 @@ class TestTuner(unittest.TestCase):
     def test_tuner(self):
         with patch('locast2dvr.tuner.LocastService') as service:
             geo = MagicMock()
-            uid = MagicMock()
             port = 6077
             ssdp = MagicMock()
 
-            tuner = create_tuner(self.config, geo, ssdp, uid, port)
+            tuner = create_tuner(self.config, geo, ssdp, port)
 
             self.assertEqual(tuner.geo, geo)
-            self.assertEqual(tuner.uid, uid)
             self.assertEqual(tuner.config, self.config)
             self.assertEqual(tuner.port, port)
             self.assertEqual(tuner.ssdp, ssdp)
@@ -93,17 +91,18 @@ class TestTunerStart(unittest.TestCase):
 
     def test_start(self, service):
         service.return_value = MagicMock()
-        uid = MagicMock()
+
         port = 6099
         ssdp = MagicMock()
-        tuner = create_tuner(self.config, port=port, uid=uid, ssdp=ssdp)
+        tuner = create_tuner(self.config, port=port, ssdp=ssdp)
+        tuner.locast_service.uid = "2721c2f0-6f2a-11eb-8001-acde48001122"
         log = MagicMock()
         tuner.log = log
         with patch("locast2dvr.tuner.start_http") as http:
             tuner.start()
 
             http.assert_called_once_with(
-                self.config, port, uid, service.return_value, ssdp, log
+                self.config, port, "2721c2f0-6f2a-11eb-8001-acde48001122", service.return_value, ssdp, log
             )
             tuner.locast_service.start.assert_called()
 
@@ -113,7 +112,7 @@ class TestTunerStart(unittest.TestCase):
         port = None
         ssdp = MagicMock()
         with patch("locast2dvr.tuner.start_http") as http:
-            tuner = create_tuner(self.config, port=port, uid=uid, ssdp=ssdp)
+            tuner = create_tuner(self.config, port=port, ssdp=ssdp)
             log = MagicMock()
             tuner.log = log
 
@@ -145,17 +144,19 @@ class TestRepr(unittest.TestCase):
         x.city = "City"
         x.zipcode = "11111"
         x.dma = "345"
+        x.uid = "2721c2f0-6f2a-11eb-8001-acde48001122"
         service.return_value = x
         tuner = create_tuner(self.config, port=6077)
         self.assertEqual(str(
-            tuner), "Tuner(city: City, zip: 11111, dma: 345, uid: Tuner_0, url: http://1.2.3.4:6077)")
+            tuner), "Tuner(city: City, zip: 11111, dma: 345, uid: 2721c2f0-6f2a-11eb-8001-acde48001122, url: http://1.2.3.4:6077)")
 
     def test_repr_no_port(self, service):
         x = MagicMock()
         x.city = "City"
         x.zipcode = "11111"
         x.dma = "345"
+        x.uid = "2721c2f0-6f2a-11eb-8001-acde48001122"
         service.return_value = x
         tuner = create_tuner(self.config, port=None)
         self.assertEqual(str(
-            tuner), "Tuner(city: City, zip: 11111, dma: 345, uid: Tuner_0)")
+            tuner), "Tuner(city: City, zip: 11111, dma: 345, uid: 2721c2f0-6f2a-11eb-8001-acde48001122)")

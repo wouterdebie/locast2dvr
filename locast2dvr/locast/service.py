@@ -3,6 +3,7 @@ import re
 import threading
 from datetime import datetime
 from typing import Optional, Tuple
+import uuid
 
 import m3u8
 import requests
@@ -84,7 +85,7 @@ class LocastService(LoggingHandler):
     def start(self):
         self._fcc_facilities = Facilities.instance()
         self._load_location_data()
-
+        self.uid = str(uuid.uuid5(uuid.UUID(self.config.uid), str(self.dma)))
         # Start cache updater timer if necessary, otherwise, just preload
         # stations once
         if self.config.cache_stations:

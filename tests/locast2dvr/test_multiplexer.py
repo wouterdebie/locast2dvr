@@ -17,7 +17,8 @@ class TestMultiPlexer(unittest.TestCase):
             'logfile': None,
             'bind_address': '1.2.3.4',
             'uid': "TEST",
-            'remap': False
+            'remap': False,
+            'uid': '2721c2f0-6f2a-11eb-8001-acde48001122',
         })
 
     def test_multiplexer(self):
@@ -30,7 +31,7 @@ class TestMultiPlexer(unittest.TestCase):
         self.assertEqual(mp.config, self.config)
         self.assertEqual(mp.tuners, [])
         self.assertEqual(mp.city, "Multiplexer")
-        self.assertEqual(mp.uid, "TEST_MULTI")
+        self.assertEqual(mp.uid, "2721c2f0-6f2a-11eb-8001-acde48001122")
         self.assertEqual(mp.ssdp, ssdp)
         self.assertEqual(mp.url, "http://1.2.3.4:6077")
 
@@ -43,7 +44,7 @@ class TestMultiPlexer(unittest.TestCase):
             mp.log = MagicMock()
             mp.start()
             http.assert_called_once_with(
-                self.config, port, "TEST_MULTI", mp, ssdp, mp.log
+                self.config, port, "2721c2f0-6f2a-11eb-8001-acde48001122", mp, ssdp, mp.log
             )
             mp.log.info.assert_called_once_with(f"Started at {mp.url}")
 
