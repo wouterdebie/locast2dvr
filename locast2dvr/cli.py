@@ -19,7 +19,7 @@ from .utils import Configuration
 @click.option('-b', '--bind-address', default="127.0.0.1", show_default=True, help='Bind IP address', metavar='IP_ADDR', )
 @click.option('-p', '--port', default=6077, show_default=True, help='Bind TCP port', metavar='PORT')
 @click.option('-v', '--verbose', count=True, help='Enable verbose logging')
-@optgroup.group('\Stream options', cls=MutuallyExclusiveOptionGroup)
+@optgroup.group('Stream options', cls=MutuallyExclusiveOptionGroup)
 @optgroup.option('-f', '--ffmpeg', help='Path to ffmpeg binary', metavar='PATH', default='ffmpeg', show_default=True)
 @optgroup.option('-ds', '--direct', is_flag=True, help="Stream directly (without ffmpeg)")
 @optgroup.group('\nMultiplexing')
