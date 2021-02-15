@@ -102,6 +102,32 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
                               host_and_port=host_and_port)
         return Response(xml, mimetype='text/xml')
 
+    def _device_id_checksum(device_id: int) -> int:
+        """Generate a HDHomerun checksum for a device ID.
+        HDHomerun considers a device to be valid if the checksum
+        is 0. Adding the checksum to the device ID will
+        provide a valid checksum though.
+
+        Args:
+            device_id (int): Device ID
+
+        Returns:
+            int: Checksum of the device id.
+        """
+        lookup_table = [0xA, 0x5, 0xF, 0x6, 0x7, 0xC, 0x1,
+                        0xB, 0x9, 0x2, 0x8, 0xD, 0x4, 0x3, 0xE, 0x0]
+        checksum = 0
+        checksum ^= lookup_table[(device_id >> 28) & 0x0F]
+        checksum ^= (device_id >> 24) & 0x0F
+        checksum ^= lookup_table[(device_id >> 20) & 0x0F]
+        checksum ^= (device_id >> 16) & 0x0F
+        checksum ^= lookup_table[(device_id >> 12) & 0x0F]
+        checksum ^= (device_id >> 8) & 0x0F
+        checksum ^= lookup_table[(device_id >> 4) & 0x0F]
+        checksum ^= (device_id >> 0) & 0x0F
+
+        return checksum
+
     @app.route('/discover.json', methods=['GET'])
     def discover_json() -> Response:
         """Return data about the device in JSON
@@ -109,6 +135,10 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
         Returns:
             Response: JSON response containing device information
         """
+
+        device_id = int(uid[:8], 16)  # Hex string to int
+        valid_id = device_id + _device_id_checksum(device_id)
+
         data = {
             "FriendlyName": locast_service.city,
             "Manufacturer": "locast2dvr",
@@ -116,7 +146,7 @@ def HTTPInterface(config: Configuration, port: int, uid: str, locast_service: Lo
             "FirmwareName": config.device_firmware,
             "TunerCount": config.tuner_count,
             "FirmwareVersion": config.device_version,
-            "DeviceID": uid,
+            "DeviceID": hex(valid_id)[2:],
             "DeviceAuth": "locast2dvr",
             "BaseURL": f"http://{host_and_port}",
             "LineupURL": f"http://{host_and_port}/lineup.json"
