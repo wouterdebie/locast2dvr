@@ -18,6 +18,7 @@ class Main(LoggingHandler):
         super().__init__()
         LoggingHandler.init_logging(config)
         platform_description = f"{platform.python_implementation()} {platform.python_version()}, {platform.platform()}"
+
         self.log.info(
             f"locast2dvr {locast_version} running on {platform_description} starting")
 

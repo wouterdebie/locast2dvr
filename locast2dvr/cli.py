@@ -2,13 +2,16 @@ import click
 import click_config_file
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 
+from locast2dvr import __version__ as locast_version
+
 from .main import Main
 from .utils import Configuration
 
 
 @click.command(context_settings=dict(
     ignore_unknown_options=True,
-    allow_extra_args=True
+    allow_extra_args=True,
+    help_option_names=['-h', '--help']
 ))
 @click.option('-U', '--username', required=True, type=click.STRING, help='Locast username', metavar='USERNAME')
 @click.password_option('-P', '--password', required=True, help='Locast password', metavar='PASSWORD')
@@ -37,8 +40,9 @@ from .utils import Configuration
 @optgroup.group('\nMisc options')
 @optgroup.option('-d', '--days', default=8, show_default=True, help='Amount of days to get EPG data for', metavar='DAYS')
 @optgroup.option('-r', '--remap', is_flag=True, help='Remap channel numbers when multiplexing based on Tuner index')
-@optgroup.option('-s', '--ssdp', is_flag=False, help='Enable SSDP (currently broken)')
+@optgroup.option('-s', '--ssdp', is_flag=True, help='Enable SSDP (currently broken)')
 @optgroup.option('--logfile', help='Log file location', metavar='FILE')
+@click.version_option(locast_version)
 @click_config_file.configuration_option()
 def cli(*args, **config):
     """Locast to DVR (like Plex or Emby) integration server"""
