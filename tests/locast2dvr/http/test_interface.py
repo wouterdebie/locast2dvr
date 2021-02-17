@@ -46,13 +46,15 @@ class TestHTTPInterface(unittest.TestCase):
             }
         ]
         self.host_and_port = f'{self.config.bind_address}:{port}'
-        app = HTTPInterface(self.config, port, "TEST_UID", self.locast_service)
+        app = HTTPInterface(
+            self.config, port, "6c97580f-0440-5be6-a6ce-e648b59490b9", self.locast_service)
         app.config['DEBUG'] = True
         app.config['TESTING'] = True
         self.client = app.test_client()
 
     def test_initialization(self):
-        app = HTTPInterface(MagicMock(), 6077, "TEST_UID", MagicMock())
+        app = HTTPInterface(
+            MagicMock(), 6077, "6c97580f-0440-5be6-a6ce-e648b59490b9", MagicMock())
         self.assertIsInstance(app, Flask)
 
     def test_device_xml_valid(self):
@@ -73,7 +75,7 @@ class TestHTTPInterface(unittest.TestCase):
                 device_model="DEVICE_MODEL",
                 device_version="1.23.4",
                 friendly_name="Chicago",
-                uid='TEST_UID',
+                uid='6c97580f-0440-5be6-a6ce-e648b59490b9',
                 host_and_port='5.4.3.2:6077'
             )
 
@@ -88,7 +90,7 @@ class TestHTTPInterface(unittest.TestCase):
             "FirmwareName": "DEVICE_FIRMWARE",
             "TunerCount": 3,
             "FirmwareVersion": "1.23.4",
-            "DeviceID": "TEST_UID",
+            "DeviceID": "6c975818",
             "DeviceAuth": "locast2dvr",
             "BaseURL": f"http://5.4.3.2:6077",
             "LineupURL": f"http://5.4.3.2:6077/lineup.json"
@@ -189,7 +191,7 @@ class TestInterfaceWatch(unittest.TestCase):
         self.locast_service = MagicMock()
         self.locast_service.city = "Chicago"
         self.app = HTTPInterface(self.config, self.port,
-                                 "TEST_UID", self.locast_service)
+                                 "6c97580f-0440-5be6-a6ce-e648b59490b9", self.locast_service)
         self.client = self.app.test_client()
 
     def test_watch_m3u(self):
@@ -333,7 +335,8 @@ class TestInterfaceEPGXML(unittest.TestCase):
             }
         ]
         self.host_and_port = f'{self.config.bind_address}:{port}'
-        app = HTTPInterface(self.config, port, "TEST_UID", self.locast_service)
+        app = HTTPInterface(
+            self.config, port, "6c97580f-0440-5be6-a6ce-e648b59490b9", self.locast_service)
         app.config['DEBUG'] = True
         app.config['TESTING'] = True
         self.client = app.test_client()
@@ -356,7 +359,7 @@ class TestInterfaceLineupStatus(unittest.TestCase):
 
     def test_lineup_status(self):
         app = HTTPInterface(self.config, self.port,
-                            "TEST_UID", self.locast_service)
+                            "6c97580f-0440-5be6-a6ce-e648b59490b9", self.locast_service)
         self.client = app.test_client()
 
         json_data = self.client.get('/lineup_status.json').data.decode('utf-8')
@@ -372,7 +375,7 @@ class TestInterfaceLineupStatus(unittest.TestCase):
 
     def test_lineup_status_scanning(self):
         app = HTTPInterface(self.config, self.port,
-                            "TEST_UID", self.locast_service, True)
+                            "6c97580f-0440-5be6-a6ce-e648b59490b9", self.locast_service, True)
         self.client = app.test_client()
 
         json_data = self.client.get('/lineup_status.json').data.decode('utf-8')
@@ -387,7 +390,7 @@ class TestInterfaceLineupStatus(unittest.TestCase):
 
     def test_lineup_post(self):
         app = HTTPInterface(self.config, self.port,
-                            "TEST_UID", self.locast_service)
+                            "6c97580f-0440-5be6-a6ce-e648b59490b9", self.locast_service)
         self.client = app.test_client()
 
         response = self.client.get('/lineup.post?scan=start')
@@ -408,7 +411,7 @@ class TestConfig(unittest.TestCase):
 
     def test_lineup_status(self):
         app = HTTPInterface(self.config, self.port,
-                            "TEST_UID", self.locast_service)
+                            "6c97580f-0440-5be6-a6ce-e648b59490b9", self.locast_service)
         self.client = app.test_client()
         json_data = self.client.get('/config').data.decode('utf-8')
         data = json.loads(json_data)
