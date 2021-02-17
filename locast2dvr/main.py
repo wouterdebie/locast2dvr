@@ -14,6 +14,8 @@ from .multiplexer import Multiplexer
 from .ssdp import SSDPServer
 from .utils import Configuration, LoggingHandler
 
+from tornado.ioloop import IOLoop
+
 
 class Main(LoggingHandler):
     def __init__(self, config: Configuration) -> None:
@@ -51,7 +53,7 @@ class Main(LoggingHandler):
         if self.config.ssdp:
             self.ssdp.start()
 
-        # Start all Tuners
+        # # Start all Tuners
         for tuner in self.tuners:
             tuner.start()
 
@@ -60,6 +62,7 @@ class Main(LoggingHandler):
             self.multiplexer.start()
 
         self._report()
+        IOLoop.current().start()
 
     def _create_directories(self):
         if not os.path.exists(self.cache_dir):

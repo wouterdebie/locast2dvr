@@ -35,7 +35,7 @@ class SSDPServer(LoggingHandler):
         self.sock = None
 
     def start(self):
-        threading.Thread(target=self.run).start()
+        threading.Thread(target=self.run, daemon=True).start()
 
     def run(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

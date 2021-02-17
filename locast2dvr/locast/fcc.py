@@ -53,7 +53,7 @@ class Facilities(LoggingHandler):
         self._dma_facilities_map = {}
         self._locast_dmas = []
         self.cache_dir = os.path.join(Path.home(), '.locast2dvr')
-        self.cache_file = os.path.join(self.cache_dir, 'facilities.zip')
+        self.cache_file = os.path.join(self.cache_dir, 'facilities')
         self._lock = threading.Lock()
 
     def by_dma_and_call_sign(self, locast_dma: str, call_sign: str) -> dict:
@@ -85,19 +85,21 @@ class Facilities(LoggingHandler):
         now = datetime.now().timestamp()
 
         if not os.path.exists(self.cache_file) or now - os.path.getmtime(self.cache_file) > MAX_FILE_AGE:
-            data = self._download()
-            self._write_cache_file(data)
+            data = self._unzip(self._download())
         elif not self._dma_facilities_map:
             self.log.info(f"Using cached file: {self.cache_file}")
             data = self._read_cache_file()
 
         if data:
-            self._process(self._unzip(data))
+            loaded_lines = self._process(data)
+            self._write_cache_file("\n".join(loaded_lines))
             self.log.info("Done loading..")
         else:
             self.log.debug("Facilities are still fresh..")
 
-        threading.Timer(CHECK_INTERVAL, self._run).start()
+        timer = threading.Timer(CHECK_INTERVAL, self._run)
+        timer.setDaemon(True)
+        timer.start()
 
     def _download(self) -> bytes:
         """Download facilities zipfile from the FCC.
@@ -122,7 +124,7 @@ class Facilities(LoggingHandler):
             data ([bytes]): bytes of data to be written
         """
 
-        with open(self.cache_file, mode='wb') as f:
+        with open(self.cache_file, mode='w') as f:
             f.write(data)
 
         self.log.info(f"Cached facilities at {self.cache_file}")
@@ -133,7 +135,7 @@ class Facilities(LoggingHandler):
         Returns:
             bytes: bytes of data
         """
-        with open(self.cache_file, 'rb') as file:
+        with open(self.cache_file, 'r') as file:
             return file.read()
 
     def _unzip(self, data: bytes) -> str:
@@ -160,6 +162,7 @@ class Facilities(LoggingHandler):
         with self._lock:
             # Reset everything before processing
             self._locast_dmas = []
+            loaded_lines = []
 
             for i, line in enumerate(facilities.split("\n")):
                 if not line:
@@ -199,6 +202,8 @@ class Facilities(LoggingHandler):
                         if locast_dma_id:
                             key = (locast_dma_id, call_sign)
                             self._dma_facilities_map[key] = facility
+                            loaded_lines.append(line)
+            return loaded_lines
 
     def _find_locast_dma_id_by_fcc_dma_name(self, fcc_dma: str) -> str:
         """Find a locast dma id from a FCC DMA string

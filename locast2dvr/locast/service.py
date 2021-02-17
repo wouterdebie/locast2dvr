@@ -83,6 +83,7 @@ class LocastService(LoggingHandler):
         self._channel_lock = threading.Lock()
 
     def start(self):
+        self.uid = "foo"
         self._fcc_facilities = Facilities.instance()
         self._load_location_data()
         self.uid = str(uuid.uuid5(uuid.UUID(self.config.uid), str(self.dma)))
@@ -245,7 +246,9 @@ class LocastService(LoggingHandler):
         stations = self._get_stations()
         with self._channel_lock:
             self._stations = stations
-        threading.Timer(self.config.cache_timeout, self._update_cache).start()
+        timer = threading.Timer(self.config.cache_timeout, self._update_cache)
+        timer.setDaemon(True)
+        timer.start()
 
     def _get_stations(self) -> list:
         """Actual implementation of retrieving all station information
