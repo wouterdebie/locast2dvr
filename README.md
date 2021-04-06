@@ -1,3 +1,6 @@
+# DEPRECATION WARNING!!!!
+Since I've rewritten this project in rust as [locast2tuner](http://github.com/wouterdebie/locast2tuner), this project should be considered deprecated.
+
 # locast2dvr
 
 [![Build Status](https://travis-ci.com/wouterdebie/locast2dvr.svg?branch=main)](https://travis-ci.com/wouterdebie/locast2dvr)
@@ -59,20 +62,20 @@ Options:
   Stream options: [mutually_exclusive]
     -f, --ffmpeg PATH             Path to ffmpeg binary  [default: ffmpeg]
     -ds, --direct                 Stream directly (without ffmpeg)
-  
-Multiplexing: 
+
+Multiplexing:
     -m, --multiplex               Multiplex devices
     -M, --multiplex-debug         Multiplex devices AND start individual
                                   instances (multiplexer is started on the
                                   last port + 1)
 
-  
+
 Location overrides: [mutually_exclusive]
     -ol, --override-location LAT,LONG
                                   Override location
     -oz, --override-zipcodes ZIP  Override zipcodes
-  
-Debug options: 
+
+Debug options:
     --bytes-per-read BYTES        Bytes per read  [default: 1152000]
     --tuner-count COUNT           Tuner count  [default: 3]
     --device-model TEXT           HDHomerun device model reported to clients
@@ -89,8 +92,8 @@ Debug options:
                                   [default: 3600]
 
     --http-threads INTEGER        HTTP server threads  [default: 5]
-  
-Misc options: 
+
+Misc options:
     -d, --days DAYS               Amount of days to get EPG data for
                                   [default: 8]
 
