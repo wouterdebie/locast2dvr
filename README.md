@@ -3,7 +3,7 @@ Since I've rewritten this project in rust as [locast2tuner](http://github.com/wo
 
 # locast2dvr
 
-[![Build Status](https://travis-ci.com/wouterdebie/locast2dvr.svg?branch=main)](https://travis-ci.com/wouterdebie/locast2dvr)
+[![Build Status](https://travis-ci.com/wouterdebie/locast2dvr.svg?branch=main)](https://travis-ci.com/wouterdebie/locast2dvr) [![Join the chat at https://gitter.im/wouterdebie/locast2dvr](https://badges.gitter.im/wouterdebie/locast2dvr.svg)](https://gitter.im/wouterdebie/locast2dvr?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This application provides an interface between locast.org and [Plex Media Server (PMS)](https://plex.tv) or [Emby](https://emby.media) by acting like a [HDHomerun](https://www.silicondust.com/) or an m3u Tuner and an XMLTV provider.
 
